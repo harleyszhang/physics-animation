@@ -3324,18 +3324,18 @@
       const coilY = h * 0.5;
       const coilR = 58;
       const coilW = 42;
-      ctx.fillStyle = 'rgba(198,121,47,0.15)';
+      ctx.fillStyle = 'rgba(198,121,47,0.12)';
       ctx.fillRect(coilX - coilW, coilY - coilR, coilW * 2, coilR * 2);
       ctx.strokeStyle = '#c6792f';
       ctx.lineWidth = 4;
       const nLoops = 8 + Math.floor(N / 15);
       for (let i = 0; i < nLoops; i++) {
-        const y = coilY - coilR + (i / (nLoops - 1)) * (coilR * 2);
+        const y = coilY - coilR + (i / Math.max(nLoops - 1, 1)) * (coilR * 2);
         ctx.beginPath();
         ctx.ellipse(coilX, y, coilW - 2, 8, 0, 0, Math.PI * 2);
         ctx.stroke();
       }
-      ctx.strokeStyle = 'rgba(255,191,73,0.3)';
+      ctx.strokeStyle = 'rgba(255,191,73,0.25)';
       ctx.lineWidth = 1;
       for (let i = -1; i <= 1; i++) {
         ctx.beginPath();
@@ -3343,20 +3343,22 @@
         ctx.stroke();
       }
 
-      const range = 95;
-      const motion = Math.sin(params.time * (0.6 + speed * 0.5)) * range;
-      const magnetX = coilX + motion;
-      const magnetInCoil = Math.abs(magnetX - coilX) < coilW - 5;
+      const range = 85;
+      const phaseRate = speed * 1.4;
+      const motion = Math.sin(params.time * phaseRate) * range;
+      const magnetY = coilY + motion;
+      const magnetH = 48;
+      const magnetInCoil = magnetY > coilY - coilR + magnetH && magnetY < coilY + coilR - magnetH;
       ctx.fillStyle = '#ff6b6b';
-      ctx.fillRect(magnetX - 14, coilY - 48, 28, 48);
+      ctx.fillRect(coilX - 14, magnetY - magnetH, 28, magnetH);
       ctx.fillStyle = '#3c6dd0';
-      ctx.fillRect(magnetX - 14, coilY, 28, 48);
+      ctx.fillRect(coilX - 14, magnetY, 28, magnetH);
       ctx.fillStyle = '#fff';
       ctx.font = '12px Poppins, sans-serif';
-      ctx.fillText('N', magnetX - 5, coilY - 24);
-      ctx.fillText('S', magnetX - 5, coilY + 26);
+      ctx.fillText('N', coilX - 5, magnetY - 24);
+      ctx.fillText('S', coilX - 5, magnetY + 26);
 
-      const emf = (magnetInCoil ? 0.8 : 1.2) * speed * (N / 50) * (1.2 + 0.5 * Math.abs(Math.cos(params.time * (0.6 + speed * 0.5))));
+      const emf = (magnetInCoil ? 0.8 : 1.2) * speed * (N / 50) * (1.2 + 0.5 * Math.abs(Math.cos(params.time * phaseRate)));
       const emfClamp = clamp(emf, 0, 8);
       const pointerBaseX = w * 0.72;
       const pointerBaseY = coilY;
@@ -3404,7 +3406,7 @@
       ctx.fillStyle = '#1f2a44';
       ctx.font = '13px Poppins, sans-serif';
       ctx.fillText('法拉第定律 |ε| = N · ΔΦ/Δt  参考 PhET 法拉第定律', 22, 32);
-      ctx.fillText(`匝数 N=${N}  磁铁速度↑ → 磁通变化率↑ → 感应电动势↑ → 灯泡变亮`, 22, 52);
+      ctx.fillText(`匝数 N=${N}  磁铁从上往下穿过线圈 → 磁通变化 → 感应电动势 → 灯泡变亮`, 22, 52);
       ctx.fillText('楞次定律：感应电流阻碍磁通变化', 22, 72);
       ctx.restore();
     }
@@ -5657,6 +5659,17 @@
           const hasPhoto = (p.frequency || 8) > (p.workFunction || 3.5) * 0.4;
           return hasPhoto ? `hf > W₀ → 有光电流，光强×${(p.intensity || 1).toFixed(1)}` : 'hf < W₀ → 无光电子';
         },
+        practice: {
+          prompt: '调节频率使超过截止频率（有光电流）',
+          unit: '',
+          targets: [0.5],
+          tolerance: 0.4,
+          getCurrent: (p) => (p.frequency || 8) - (p.workFunction || 3.5) * 0.4
+        },
+        extraPractice: [
+          { prompt: '若逸出功 W₀ = 2.5 eV，截止频率约为多少 Hz？（h≈4.14×10⁻¹⁵ eV·s）', answer: 'f₀ = W₀/h ≈ 6×10¹⁴ Hz。' },
+          { prompt: '光强加倍时，光电流和最大初动能如何变化？', answer: '光电流约加倍；最大初动能不变（由频率决定）。' }
+        ],
         animationDesc: '一个真实的真空光电管实验装置，紫外光照射到金属铯极板上。用金色光子粒子流可视化：一个个光子撞击金属表面，瞬间打出蓝色电子粒子（光电子），电子飞向阳极，电路中产生电流（电流表指针摆动）。金属表面微观结构清晰（原子晶格排列）。背景有真空泵、电源。实验室环境，特写，4K。',
         realityPoint: '真实光电管、真空装置、紫外灯、电流表、实验室器材。',
         draw: drawPhotoelectric
@@ -5674,6 +5687,16 @@
           { id: 'current', label: '灯管电流 (mA)', min: 5, max: 30, step: 1, value: 15, unit: 'mA' }
         ],
         getDetails: (p) => `U=${(p.voltage || 120).toFixed(0)}V → 电子获得能量跃迁发光`,
+        practice: {
+          prompt: '让激发电压达到 150 V',
+          unit: 'V',
+          targets: [150],
+          tolerance: 8,
+          getCurrent: (p) => p.voltage || 120
+        },
+        extraPractice: [
+          { prompt: '霓虹灯发光的物理过程是什么？', answer: '电子在电场中加速获得能量，与氖原子碰撞使其跃迁，跃迁回低能级时发射光子。' }
+        ],
         animationDesc: '一个真实的夜晚城市街道，霓虹灯招牌“CAFE”发出鲜艳的红光。微距特写霓虹灯管内部：微观动画可视化电子在氖原子能级间跳跃，每次从高能级掉落到低能级，就释放一个红色光子。无数光子汇聚成明亮光束射出玻璃管。玻璃管表面有轻微灰尘和划痕，真实老化质感。背景是模糊的城市夜景。超写实，微距，4K。',
         realityPoint: '真实霓虹灯招牌、玻璃管质感、城市夜景、灰尘细节。',
         draw: drawAtomicLevel
@@ -5691,6 +5714,16 @@
           { id: 'reactivity', label: '反应强度 (示意)', min: 0.5, max: 2, step: 0.1, value: 1, unit: '×' }
         ],
         getDetails: (p) => `控制棒${(p.controlRod || 40).toFixed(0)}% → ${p.controlRod > 60 ? '反应减弱' : '链式反应持续'}`,
+        practice: {
+          prompt: '将控制棒插入 70% 使反应减弱',
+          unit: '%',
+          targets: [70],
+          tolerance: 5,
+          getCurrent: (p) => p.controlRod || 40
+        },
+        extraPractice: [
+          { prompt: '控制棒在核反应堆中的作用是什么？', answer: '吸收中子，降低反应性，使链式反应可控或停堆。' }
+        ],
         animationDesc: '一个真实的核电站控制室背景（虚化），前景是一个反应堆模型。微距进入燃料棒内部：一个铀-235原子核被慢中子（蓝色粒子）撞击后，分裂成两个较小的原子核（碎片），同时释放2-3个新的中子（黄色粒子）和大量能量（闪光）。新中子继续撞击其他铀核，形成链式反应。反应堆冷却剂气泡流动。真实金属质感，热成像颜色显示温度升高。教育纪录片风格，4K。',
         realityPoint: '真实控制室背景、反应堆模型、金属质感、热成像、气泡流动。',
         draw: drawFission
@@ -5708,6 +5741,16 @@
           { id: 'orbitSpeed', label: '公转速度 (相对)', min: 0.05, max: 0.3, step: 0.02, value: 0.15, unit: '×' }
         ],
         getDetails: (p) => `偏心率 e=${(p.eccentricity || 0.6).toFixed(2)}，T²∝a³`,
+        practice: {
+          prompt: '将轨道偏心率调到 0.5',
+          unit: '',
+          targets: [0.5],
+          tolerance: 0.06,
+          getCurrent: (p) => p.eccentricity || 0.6
+        },
+        extraPractice: [
+          { prompt: '开普勒第三定律 T²∝a³ 中 a 是什么？', answer: 'a 是椭圆轨道的半长轴。' }
+        ],
         animationDesc: '从太空真实视角看太阳系，太阳发出强烈的光和热，地球在精确的椭圆轨道上运行。用半透明的引力线可视化：太阳和地球之间有多条动态引力线（类似拉伸的橡皮筋），表示引力相互作用。地球表面大陆轮廓、云层、极光清晰可见。太阳耀斑活动。背景是深邃星空，星星有真实闪烁。NASA级画质，4K，慢速运动。',
         realityPoint: '真实天体纹理（NASA素材风格）、太阳耀斑、星空、引力可视化。',
         draw: drawGravityOrbit
@@ -5725,6 +5768,16 @@
           { id: 'diskBright', label: '吸积盘亮度', min: 0.5, max: 1.5, step: 0.1, value: 1, unit: '×' }
         ],
         getDetails: (p) => `质量系数 ${(p.mass || 1).toFixed(1)} → 引力透镜强度`,
+        practice: {
+          prompt: '将黑洞质量系数调到 1.2',
+          unit: '×',
+          targets: [1.2],
+          tolerance: 0.1,
+          getCurrent: (p) => p.mass || 1
+        },
+        extraPractice: [
+          { prompt: '什么是爱因斯坦环？', answer: '背景光源发出的光被黑洞等大质量天体弯曲，形成环状或弧状像。' }
+        ],
         animationDesc: '真实深空场景，一个恒星质量黑洞（黑色球体，周围有吸积盘）位于前景。远处背景星系的星光经过黑洞附近时，光线被明显弯曲，形成多个扭曲的像和爱因斯坦环。吸积盘物质高速旋转，发出炽热光芒，相对论性喷流从两极射出。星光闪烁，宇宙尘埃云飘过。电影级太空画面，4K，超写实。',
         realityPoint: '真实宇宙场景风格、吸积盘细节、星光、爱因斯坦环现象。',
         draw: drawBlackHole
@@ -5742,6 +5795,16 @@
           { id: 'head', label: '水头高度 (相对)', min: 0.6, max: 1.4, step: 0.1, value: 1, unit: '×' }
         ],
         getDetails: (p) => `流量×${(p.flow || 1).toFixed(1)} → 势能→动能→电能`,
+        practice: {
+          prompt: '将水流量调到 2.0 倍',
+          unit: '×',
+          targets: [2],
+          tolerance: 0.15,
+          getCurrent: (p) => p.flow || 1.5
+        },
+        extraPractice: [
+          { prompt: '水力发电中势能如何转化为电能？', answer: '水从高处落下，势能→动能；冲击水轮机→机械能；发电机→电能。' }
+        ],
         animationDesc: '一个真实的大型水坝场景，水流从高处倾泻而下冲击水轮机。能量流可视化：用不同颜色光流表示能量形式——上游水库（蓝色，重力势能）、水流下落（绿色，动能增加）、水轮机旋转（黄色，机械能）、发电机输出电线（红色，电能）。水花飞溅，彩虹出现。无人机航拍视角加内部微距切换，真实大坝环境，4K。',
         realityPoint: '真实水坝、水流、水花、彩虹、无人机视角。',
         draw: drawHydroPower
@@ -5759,6 +5822,16 @@
           { id: 'tubeConduct', label: '管壁电导 (相对)', min: 0.5, max: 1.5, step: 0.1, value: 1, unit: '×' }
         ],
         getDetails: (p) => `磁铁×${(p.magnetStrength || 1).toFixed(1)} → 涡流阻尼越大下落越慢`,
+        practice: {
+          prompt: '将磁铁强度调到 1.2 倍',
+          unit: '×',
+          targets: [1.2],
+          tolerance: 0.1,
+          getCurrent: (p) => p.magnetStrength || 1
+        },
+        extraPractice: [
+          { prompt: '为什么磁铁在铜管中下落变慢？', answer: '磁铁运动使管壁产生涡电流，涡电流磁场阻碍磁铁运动（楞次定律）。' }
+        ],
         animationDesc: '一个真实的物理实验，一根长铜管竖直固定，一块强磁铁从管口释放。慢动作显示：磁铁缓慢下落，比自由落体慢得多。用半透明的蓝色涡电流线可视化：磁铁周围产生环形感应电流，这些电流产生磁场抵抗磁铁运动。铜管表面金属光泽，有轻微氧化痕迹。背景有实验员手持磁铁准备。特写，4K，慢动作。',
         realityPoint: '真实铜管、强磁铁、金属质感、实验员手部。',
         draw: drawEddyCurrent
@@ -5787,6 +5860,21 @@
           const epMax = (p.mass || 1) * g * hMax;
           return `E = E_k + E_p 常量，最大势能≈${epMax.toFixed(1)} J`;
         },
+        practice: {
+          prompt: '让最大势能接近 2.0 J',
+          unit: 'J',
+          targets: [2],
+          tolerance: 0.3,
+          getCurrent: (p) => {
+            const L = 0.5 + (p.length || 80) / 80;
+            const angle0 = (p.angle || 30) * Math.PI / 180;
+            const hMax = L * (1 - Math.cos(angle0));
+            return (p.mass || 1) * g * hMax;
+          }
+        },
+        extraPractice: [
+          { prompt: '单摆从最高点摆到最低点，动能如何变化？', answer: '势能转化为动能，最低点动能最大。' }
+        ],
         textbook: '参考人教版《物理》必修第二册机械能守恒：教材用自由落体、单摆推导只有重力做功时 E_k + E_p 不变，强调“选零势能面”和“无摩擦”条件。',
         animationDesc: '单摆摆动：实时显示 E_p = mgh、E_k = ½mv² 与总机械能 E；最高点势能大、最低点动能大，总和不变。可调节质量、摆长、初角观察。',
         realityPoint: '单摆、过山车、荡秋千、动能势能转化。',
@@ -5809,6 +5897,13 @@
           { id: 'ropes', label: '绳股数 n', min: 1, max: 4, step: 1, value: 2, unit: '股' }
         ],
         getDetails: (p) => `F = G/n = ${((p.weight || 100) / Math.max(1, Math.round(p.ropes || 2))).toFixed(0)} N`,
+        practice: {
+          prompt: '让拉力 F 达到 40 N（调节 G 或 n）',
+          unit: 'N',
+          targets: [40],
+          tolerance: 4,
+          getCurrent: (p) => (p.weight || 100) / Math.max(1, Math.round(p.ropes || 2))
+        },
         textbook: '参考苏科版《九年级物理》简单机械：教材用实验得出 F = G/n，强调 n 的数法及“省力不省功”。',
         animationDesc: '滑轮组吊重物：标出 G、n 股绳与拉力 F = G/n；调节 G 与 n 观察拉力变化。',
         realityPoint: '吊车、升降机、绳股数、省力。',
@@ -5841,6 +5936,20 @@
           const v = u > f ? (u * f) / (u - f) : 0;
           return v > 0 ? `1/u+1/v=1/f → v=${v.toFixed(0)} cm` : 'u≤f 成虚像';
         },
+        practice: {
+          prompt: '让像距 v 达到 120 cm',
+          unit: 'cm',
+          targets: [120],
+          tolerance: 10,
+          getCurrent: (p) => {
+            const u = p.objectDist || 150;
+            const f = p.focal || 80;
+            return u > f ? (u * f) / (u - f) : 0;
+          }
+        },
+        extraPractice: [
+          { prompt: '物距 u > 2f 时，像的特点是什么？', answer: '成倒立、缩小的实像，像距 f < v < 2f。' }
+        ],
         textbook: '参考人教版《物理》八年级凸透镜成像：教材用蜡烛、凸透镜、光屏探究 u、v、f 关系，归纳 1/u+1/v=1/f 与成像规律。',
         animationDesc: '凸透镜光路：物、透镜、像与三条典型光线；实时标出 u、v、f 与公式。调节物距观察像距与像的虚实、大小。',
         realityPoint: '照相机、投影仪、放大镜、物距像距。',
@@ -5864,6 +5973,16 @@
           { id: 'timeJoule', label: '通电时间 t (s)', min: 1, max: 10, step: 0.5, value: 2, unit: 's' }
         ],
         getDetails: (p) => `Q = I²Rt = ${((p.current || 2) ** 2 * (p.resistance || 5) * (p.timeJoule || 2)).toFixed(0)} J`,
+        practice: {
+          prompt: '让发热量 Q 达到 100 J',
+          unit: 'J',
+          targets: [100],
+          tolerance: 8,
+          getCurrent: (p) => (p.current || 2) ** 2 * (p.resistance || 5) * (p.timeJoule || 2)
+        },
+        extraPractice: [
+          { prompt: '为什么保险丝会在电流过大时熔断？', answer: 'Q = I²Rt，电流过大时发热量剧增，保险丝熔点低故熔断切断电路。' }
+        ],
         textbook: '参考人教版《物理》九年级焦耳定律：教材通过实验得出 Q ∝ I²、Q ∝ R、Q ∝ t，写出 Q = I²Rt，并联系电热器、保险丝。',
         animationDesc: '电阻丝通电发热：电流 I、电阻 R 越大，线圈越红；实时显示 Q = I²Rt 与热量。',
         realityPoint: '电热器、保险丝、导线发热、I²R。',
@@ -5931,6 +6050,16 @@
           { id: 'deltaT', label: '温升 ΔT (°C)', min: 5, max: 40, step: 5, value: 20, unit: '°C' }
         ],
         getDetails: (p) => `Q = cmΔT = ${((p.specificHeat || 4.2) * (p.mass || 1) * (p.deltaT || 20)).toFixed(0)} kJ`,
+        practice: {
+          prompt: '让吸热量 Q 达到 80 kJ',
+          unit: 'kJ',
+          targets: [80],
+          tolerance: 6,
+          getCurrent: (p) => (p.specificHeat || 4.2) * (p.mass || 1) * (p.deltaT || 20)
+        },
+        extraPractice: [
+          { prompt: '为什么沿海地区昼夜温差比内陆小？', answer: '水的比热容大，白天吸热、夜晚放热多，温度变化慢。' }
+        ],
         textbook: '参考人教版《物理》九年级比热容：教材用“同质量水与沙子加热对比”引入比热容，写出 Q = cmΔT，并解释沿海昼夜温差小。',
         animationDesc: '烧杯加热：调节 c、m、ΔT，显示 Q = cmΔT；比热容大则“同温升吸热多”。',
         realityPoint: '海水与沙滩、冷却剂、暖气用水、Q=cmΔT。',
@@ -5956,6 +6085,16 @@
         getDetails: (p) => {
           const S = p.standMode === 1 ? (p.area || 0.02) : (p.area || 0.02) * 2;
           return `P = F/S = ${((p.weight || p.force || 600) / S).toFixed(0)} Pa`;
+        },
+        practice: {
+          prompt: '让压强 P 达到 25000 Pa',
+          unit: 'Pa',
+          targets: [25000],
+          tolerance: 1500,
+          getCurrent: (p) => {
+            const S = p.standMode === 1 ? (p.area || 0.02) : (p.area || 0.02) * 2;
+            return (p.weight || p.force || 600) / S;
+          }
         },
         textbook: '参考人教版《物理》八年级压强：教材用“压力一定时，接触面积越小，效果越明显”引入 P = F/S，并举例刀、履带、滑雪板。',
         animationDesc: '脚踩沙地：同一体重，脚尖着地陷得深（S 小 P 大）、整脚着地陷得浅；标出 F、S、P = F/S。',
@@ -5984,6 +6123,16 @@
           { id: 'current', label: '电流 I (A)', min: 0.5, max: 3, step: 0.25, value: 1, unit: 'A' }
         ],
         getDetails: (p) => `匝数×电流 → 磁场强弱，拇指指向 N 极`,
+        practice: {
+          prompt: '让电流达到 2 A',
+          unit: 'A',
+          targets: [2],
+          tolerance: 0.2,
+          getCurrent: (p) => p.current || 1
+        },
+        extraPractice: [
+          { prompt: '安培定则中，四指和拇指分别表示什么？', answer: '四指指向电流方向，拇指指向 N 极。' }
+        ],
         textbook: '参考人教版《物理》九年级电与磁：教材用铁屑显示螺线管磁场，引入安培定则判断 N 极与磁感线方向。',
         animationDesc: '通电螺线管与磁感线：电流方向用 ⊗⊙ 标出，管内外磁感线闭合；调节匝数与电流观察磁场强弱。',
         realityPoint: '电磁铁、继电器、喇叭、右手定则。',
@@ -6012,6 +6161,16 @@
           const moving = (p.appliedForce || 6) > FfMax;
           return moving ? `滑动 a=${(((p.appliedForce || 6) - FfMax) / (p.mass || 2)).toFixed(2)} m/s²` : '静止 F_f = F拉';
         },
+        practice: {
+          prompt: '让木块刚好开始滑动（拉力略大于最大静摩擦）',
+          unit: 'N',
+          targets: [8],
+          tolerance: 0.8,
+          getCurrent: (p) => (p.mu || 0.4) * (p.mass || 2) * g
+        },
+        extraPractice: [
+          { prompt: '静摩擦力与滑动摩擦力有何区别？', answer: '静摩擦随外力变化直到最大值；滑动摩擦 F_f = μ_k N，一般略小于最大静摩擦。' }
+        ],
         textbook: '参考人教版《物理》八年级摩擦力：教材用弹簧测力计拉木块得出 F_f = μN，区分静摩擦与滑动摩擦，并说明增大压力或粗糙程度可增大摩擦。',
         animationDesc: '参考 PhET 摩擦力：木块置于水平面，调节拉力、质量、μ；箭头标出拉力与摩擦力，F拉>μN 时木块滑动，显示 a=(F−F_f)/m。',
         realityPoint: '推箱子、刹车、鞋底花纹、摩擦系数。',
@@ -6039,6 +6198,16 @@
           const charge = (p.protons || 6) - (p.electrons || 6);
           return `${sym}  A=${(p.protons || 6) + (p.neutrons || 6)}  ${charge > 0 ? '+' + charge : charge}价`;
         },
+        practice: {
+          prompt: '构造一个碳原子（6 质子、6 中子、6 电子）',
+          unit: '',
+          targets: [0],
+          tolerance: 0,
+          getCurrent: (p) => Math.abs((p.protons || 6) - 6) + Math.abs((p.neutrons || 6) - 6) + Math.abs((p.electrons || 6) - 6)
+        },
+        extraPractice: [
+          { prompt: '同位素的定义是什么？', answer: '质子数相同、中子数不同的同一元素的不同核素。' }
+        ],
         textbook: '参考人教版《化学》九年级物质构成：原子由原子核（质子+中子）与核外电子构成；质子数决定元素，电子数决定带电情况。',
         animationDesc: '参考 PhET 建构原子：核内 p、n 数量，核外电子绕核；显示元素符号、质量数 A、电荷（中性/离子）。',
         realityPoint: '元素周期表、同位素、离子。',
@@ -6062,6 +6231,16 @@
           { id: 'voltage', label: '电压 U (V)', min: 0, max: 18, step: 1, value: 9, unit: 'V' }
         ],
         getDetails: (p) => `C∝A/d  Q=CU  U=${p.voltage || 9}V 调节 A、d 观察 C 与 Q`,
+        practice: {
+          prompt: '让电压 U 达到 12 V',
+          unit: 'V',
+          targets: [12],
+          tolerance: 0.5,
+          getCurrent: (p) => p.voltage || 9
+        },
+        extraPractice: [
+          { prompt: '平行板电容 C 与面积 A、板间距 d 的关系？', answer: 'C ∝ A，C ∝ 1/d，即 C = ε₀A/d。' }
+        ],
         textbook: '参考高中物理选修：平行板电容 C=ε₀A/d，与面积成正比、与间距成反比；Q=CU。PhET 电容器实验可直观调节 A、d、U。',
         animationDesc: '参考 PhET 电容器实验：两平行板、+/− 电荷分布，板间电场线；调节面积、间距、电压，观察 C 与 Q 变化。',
         realityPoint: '平行板电容、极板面积、板间距、Q=CV。',
@@ -6090,12 +6269,473 @@
           const v = u > f ? (u * f) / (u - f) : 0;
           return v > 0 ? `v=${v.toFixed(0)}  m=${(v/u).toFixed(2)}` : 'u≤f 成虚像';
         },
+        practice: {
+          prompt: '让像距 v 达到 90（物距与焦距配合）',
+          unit: '',
+          targets: [90],
+          tolerance: 8,
+          getCurrent: (p) => {
+            const u = p.objDist || 120;
+            const f = p.focalLen || 60;
+            return u > f ? (u * f) / (u - f) : 0;
+          }
+        },
+        extraPractice: [
+          { prompt: '放大率 m = v/u 的物理意义？', answer: '像距与物距之比，等于像高与物高之比。' }
+        ],
         textbook: '参考人教版《物理》八年级凸透镜成像：三条特殊光线作光路图，1/u+1/v=1/f，实像虚像、放大缩小与物距关系。PhET 几何光学可交互作图。',
         animationDesc: '参考 PhET 几何光学：物、透镜、三条特殊光线交于像点；标出 u、v、f 与放大率 m。',
         realityPoint: '照相机、投影仪、放大镜、光路图。',
         draw: drawGeometricOptics
-      }
+      },
+      { id: 'freeFall', name: '自由落体', category: '力学', formula: 'v = gt \\quad h = \\frac{1}{2}gt^2', formulaDetail: '初速为零、只受重力的匀加速直线运动。加速度 a = g ≈ 9.8 m/s²；瞬时速度 v = gt（与时间成正比）；下落高度 h = ½gt²（与 t² 成正比）。同一地点 g 与物体质量无关。', summary: '从静止下落的物体：时间 t 越大，速度 v 越大、下落高度 h 越大。刻度尺与轨迹直观显示 h、v 随 t 的变化。', teachingPoints: ['v = gt：1 秒末约 9.8 m/s，2 秒末约 19.6 m/s。', 'h = ½gt²：3 秒约下落 44 m。', '调节 t 观察小球位置与速度的对应关系。'], sliders: [{ id: 'timeFall', label: '下落时间 t (s)', min: 0.5, max: 4, step: 0.25, value: 2, unit: 's' }], getDetails: (p) => { const t = p.timeFall || 2; return `v=${(g*t).toFixed(1)} m/s  h=${(0.5*g*t*t).toFixed(1)} m`; }, practice: { prompt: '让 2 秒末速度接近 19.6 m/s', unit: 'm/s', targets: [19.6], tolerance: 0.5, getCurrent: (p) => g * (p.timeFall || 2) }, extraPractice: [{ prompt: '自由落体 3 秒下落多高？', answer: 'h = ½gt² ≈ 0.5×9.8×9 ≈ 44.1 m。' }], animationDesc: '带刻度尺的竖直下落：调节 t 看小球位置与轨迹，实时显示 v=gt、h=½gt²。', draw: drawFreeFall },
+      { id: 'hooke', name: '胡克定律', category: '力学', formula: 'F = kx', formulaDetail: '在弹性限度内，弹簧弹力 F 与形变量 x（伸长或压缩量）成正比：F = kx。k 为劲度系数，单位 N/m，与材料、匝数、粗细有关。弹力方向与形变方向相反。', summary: '弹簧秤、缓冲器、减震器都遵循 F = kx。调节 k 或 x，弹簧伸长与弹力同步变化，直观体现正比关系。', teachingPoints: ['x 为相对自然长度的形变量。', 'k 大表示“硬”弹簧，相同 x 下 F 大。', '弹性限度内成立，超过则发生塑性形变。'], sliders: [{ id: 'k', label: '劲度系数 k (N/m)', min: 20, max: 100, step: 10, value: 50, unit: 'N/m' }, { id: 'x', label: '形变量 x (cm)', min: 0, max: 20, step: 1, value: 10, unit: 'cm' }], getDetails: (p) => `F = kx = ${((p.k || 50) * (p.x || 10) / 100).toFixed(1)} N`, practice: { prompt: '让弹力 F 达到 4 N', unit: 'N', targets: [4], tolerance: 0.3, getCurrent: (p) => (p.k || 50) * (p.x || 10) / 100 }, extraPractice: [{ prompt: '两根弹簧串联与并联，等效 k 如何？', answer: '串联 1/k = 1/k₁+1/k₂；并联 k = k₁+k₂。' }], animationDesc: '弹簧一端固定、一端挂物块：调节 x 弹簧伸长变化，调节 k 匝数变化，显示 F=kx。', draw: drawHooke },
+      { id: 'power', name: '功率', category: '力学', formula: 'P = \\frac{W}{t} = Fv', formulaDetail: '功率 P 表示做功快慢，定义 P = W/t，单位瓦特(W)=焦耳/秒。当恒力 F 与速度 v 同向时，P = Fv：力大或速度快，功率都变大。汽车额定功率一定时，上坡需大 F 则 v 必减小。', summary: '同一辆车：拉力 F 大或速度 v 大，功率 P = Fv 就大。动画中小车移动速度随 v 变化，拉力箭头大小随 F 变化。', teachingPoints: ['P = Fv 仅当 F 与 v 同向时成立。', '额定功率下，F 与 v 成反比。', '调节 F、v 观察 P 与小车运动快慢。'], sliders: [{ id: 'forceP', label: '力 F (N)', min: 10, max: 100, step: 10, value: 50, unit: 'N' }, { id: 'velocity', label: '速度 v (m/s)', min: 0.5, max: 5, step: 0.5, value: 2, unit: 'm/s' }], getDetails: (p) => `P = Fv = ${((p.forceP || 50) * (p.velocity || 2)).toFixed(0)} W`, practice: { prompt: '让功率 P 达到 100 W', unit: 'W', targets: [100], tolerance: 8, getCurrent: (p) => (p.forceP || 50) * (p.velocity || 2) }, extraPractice: [{ prompt: '汽车上坡为什么要换低挡？', answer: 'P 一定时，F 与 v 成反比；低挡获得更大牵引力 F。' }], animationDesc: '水平面上受拉力的小车：F 大则拉力箭头大，v 大则小车移动快，P=Fv 实时显示。', draw: drawPower },
+      { id: 'pendulum', name: '单摆周期', category: '力学', formula: 'T = 2\\pi\\sqrt{\\frac{L}{g}}', formulaDetail: '小角度（约 θ < 10°）单摆的周期 T = 2π√(L/g)：只与摆长 L 和重力加速度 g 有关，与摆球质量、振幅无关。摆越长 T 越大、摆动越慢；测 T、L 可反推 g。', summary: '摆钟利用单摆等时性。调节 L：摆长越长，周期 T 越大，动画中摆球摆动越慢，直观体现 T ∝ √L。', teachingPoints: ['T 与 √L 成正比，与 √g 成反比。', 'T 与质量 m、振幅 A 无关。', '调节 L 观察摆动快慢与周期数值。'], sliders: [{ id: 'lengthP', label: '摆长 L (m)', min: 0.5, max: 2, step: 0.1, value: 1, unit: 'm' }], getDetails: (p) => { const L = p.lengthP || 1; return `T = 2π√(L/g) ≈ ${(2*Math.PI*Math.sqrt(L/g)).toFixed(2)} s`; }, practice: { prompt: '让周期 T 达到 2.0 s', unit: 's', targets: [2], tolerance: 0.08, getCurrent: (p) => 2 * Math.PI * Math.sqrt((p.lengthP || 1) / g) }, extraPractice: [{ prompt: '单摆从赤道移到两极，周期如何变？', answer: 'g 增大，T 减小。' }], animationDesc: '单摆摆动：摆长 L 驱动绳长与周期，L 大则摆动慢、T 大，公式 T=2π√(L/g) 实时对应。', draw: drawPendulum },
+      { id: 'totalReflection', name: '全反射', category: '光学', formula: '\\sin C = \\frac{n_2}{n_1} \\quad (n_1 > n_2)', formulaDetail: '光从光密介质（n₁ 大）射向光疏介质（n₂ 小）时，折射角大于入射角。当入射角等于临界角 C 时折射角为 90°；入射角 ≥ C 时发生全反射，无折射光。sin C = n₂/n₁。', summary: '光纤、潜水看水面、棱镜都用到全反射。调节 n₁、n₂ 可改变临界角 C；动画中画出临界方向与反射光路。', teachingPoints: ['仅当 n₁ > n₂ 时才有临界角。', 'n₁ 越大或 n₂ 越小，C 越小，越易全反射。', '调节 n₁、n₂ 观察 C 的数值变化。'], sliders: [{ id: 'n1', label: '入射介质 n₁', min: 1.3, max: 1.6, step: 0.1, value: 1.5, unit: '' }, { id: 'n2', label: '折射介质 n₂', min: 1, max: 1.3, step: 0.1, value: 1, unit: '' }], getDetails: (p) => { const n1 = p.n1 || 1.5, n2 = p.n2 || 1; const C = n1 > n2 ? Math.asin(n2/n1) * 180 / Math.PI : 90; return `临界角 C ≈ ${C.toFixed(1)}°`; }, practice: { prompt: '让临界角接近 42°', unit: '°', targets: [42], tolerance: 2, getCurrent: (p) => { const n1 = p.n1 || 1.5, n2 = p.n2 || 1; return n1 > n2 ? Math.asin(n2/n1) * 180 / Math.PI : 90; } }, extraPractice: [{ prompt: '为什么水中气泡看起来特别亮？', answer: '光从水进入气泡（空气）时可能发生全反射。' }], animationDesc: '光密→光疏界面：入射光、临界角方向与反射光；n₁、n₂ 改变时临界角 C 随之变化。', draw: drawTotalReflection },
+      { id: 'resistivity', name: '电阻定律', category: '电学', formula: 'R = \\rho \\frac{L}{S}', formulaDetail: '均匀导体电阻 R = ρ·L/S：ρ 为电阻率（材料与温度），L 为长度，S 为横截面积。同材料下 R 与 L 成正比、与 S 成反比。', summary: '同材料导线：越长电阻越大，越细（S 小）电阻越大。动画中导线长度与粗细随 L、S 变化，直观体现 R ∝ L/S。', teachingPoints: ['ρ 与材料、温度有关；单位 Ω·m。', 'R ∝ L：长度加倍则 R 加倍。', 'R ∝ 1/S：截面积加倍则 R 减半。'], sliders: [{ id: 'lengthR', label: '长度 L (相对)', min: 0.5, max: 2, step: 0.25, value: 1, unit: '×' }, { id: 'areaS', label: '横截面积 S (相对)', min: 0.5, max: 2, step: 0.25, value: 1, unit: '×' }], getDetails: (p) => `R ∝ L/S = ${((p.lengthR || 1) / (p.areaS || 1)).toFixed(2)} (相对)`, practice: { prompt: '让 R 相对值达到 1.5', unit: '×', targets: [1.5], tolerance: 0.1, getCurrent: (p) => (p.lengthR || 1) / (p.areaS || 1) }, extraPractice: [{ prompt: '同样材料，细而长的导线与短而粗的导线，哪个电阻大？', answer: '细而长：L 大、S 小，R 大。' }], animationDesc: '导线长度 ∝ L、粗细 ∝ S：调节 L、S 观察导线形状变化，理解 R∝L、R∝1/S。', draw: drawResistivity },
+      { id: 'conduction', name: '热传导', category: '热学', formula: 'Q = \\frac{\\lambda A \\Delta T}{d} t', formulaDetail: '稳态热传导：热流（单位时间传热）与导热系数 λ、面积 A、温差 ΔT 成正比，与厚度 d 成反比。傅里叶定律：热流 ∝ ΔT/d。保温要减小热流：选 λ 小或 d 大。', summary: '同一材料：温差大或墙薄则热流大；墙厚则热流小。动画中墙体厚度与温差可调，热流箭头数量体现 Φ ∝ ΔT/d。', teachingPoints: ['λ 单位 W/(m·K)；傅里叶定律热流 ∝ ΔT/d。', 'd 大或 λ 小则热流小，保温好。', '调节 ΔT、d 观察热流强弱变化。'], sliders: [{ id: 'tempDiff', label: '温差 ΔT (°C)', min: 10, max: 60, step: 5, value: 30, unit: '°C' }, { id: 'thickness', label: '厚度 d (相对)', min: 0.5, max: 2, step: 0.25, value: 1, unit: '×' }], getDetails: (p) => `热流 ∝ ΔT/d = ${((p.tempDiff || 30) / (p.thickness || 1)).toFixed(0)}`, practice: { prompt: '让热流强度（ΔT/d）达到 40', unit: '', targets: [40], tolerance: 3, getCurrent: (p) => (p.tempDiff || 30) / (p.thickness || 1) }, extraPractice: [{ prompt: '冬天为什么穿羽绒服保暖？', answer: '羽绒间有空气，导热差；等效 d 大、λ 小，热流小。' }], animationDesc: '墙体两侧温差 ΔT、厚度 d：热端→冷端温度渐变，热流箭头数量随 ΔT/d 变化。', draw: drawConduction },
+      { id: 'workEnergy', name: '动能定理', category: '力学', formula: 'W_{合} = \\Delta E_k = \\frac{1}{2}mv^2 - \\frac{1}{2}mv_0^2', formulaDetail: '合外力对物体做的总功等于物体动能的变化：W_合 = ΔE_k = ½mv² − ½mv₀²。加速时 W>0 动能增加，减速时 W<0 动能减少。与路径无关，只与初、末速度有关。', summary: '初速 v₀、末速 v 决定动能变化 ΔE_k，合外力做功 W_合 = ΔE_k。动画中物块在轨道上，显示 E_k初、E_k末与 W。', teachingPoints: ['W_合 = E_k末 − E_k初，与路径无关。', 'W > 0 动能增加，W < 0 动能减少。', '调节 m、v₀、v 观察 W 与动能变化。'], sliders: [{ id: 'massW', label: '质量 m (kg)', min: 1, max: 5, step: 0.5, value: 2, unit: 'kg' }, { id: 'v0', label: '初速 v₀ (m/s)', min: 0, max: 10, step: 1, value: 0, unit: 'm/s' }, { id: 'vEnd', label: '末速 v (m/s)', min: 2, max: 12, step: 1, value: 6, unit: 'm/s' }], getDetails: (p) => { const m = p.massW || 2, v0 = p.v0 || 0, v = p.vEnd || 6; const W = 0.5 * m * (v*v - v0*v0); return `W_合 = ΔE_k = ${W.toFixed(1)} J`; }, practice: { prompt: '让合外力做功达到 36 J', unit: 'J', targets: [36], tolerance: 3, getCurrent: (p) => 0.5 * (p.massW || 2) * ((p.vEnd || 6)**2 - (p.v0 || 0)**2) }, extraPractice: [{ prompt: '刹车时动能去哪了？', answer: '摩擦力做负功，动能转化为内能（发热）。' }], animationDesc: '轨道上物块：初速 v₀、末速 v 对应 E_k初、E_k末，W=ΔE_k 实时显示，调节参数看变化。', draw: drawWorkEnergy },
+      { id: 'impulse', name: '冲量', category: '力学', formula: 'I = F \\Delta t \\quad \\Delta p = F \\Delta t', formulaDetail: '冲量 I = F·Δt：力与作用时间的乘积，单位 N·s。冲量等于物体动量的变化：I = Δp。安全气囊、缓冲垫通过延长 Δt 减小平均力 F，从而减小冲击。', summary: '力 F 大或作用时间 Δt 大，冲量 I 就大，动量变化大。动画中力箭头大小体现 F，作用区间宽度体现 Δt，I=F·Δt 实时显示。', teachingPoints: ['I = Δp：冲量等于动量变化（动量定理）。', '缓冲：Δt 大则 F 小，I 不变。', '调节 F、Δt 观察 I 与图示变化。'], sliders: [{ id: 'forceI', label: '力 F (N)', min: 10, max: 100, step: 10, value: 50, unit: 'N' }, { id: 'dt', label: '作用时间 Δt (s)', min: 0.1, max: 1, step: 0.1, value: 0.5, unit: 's' }], getDetails: (p) => `I = FΔt = ${((p.forceI || 50) * (p.dt || 0.5)).toFixed(1)} N·s`, practice: { prompt: '让冲量 I 达到 30 N·s', unit: 'N·s', targets: [30], tolerance: 2, getCurrent: (p) => (p.forceI || 50) * (p.dt || 0.5) }, extraPractice: [{ prompt: '为什么跳高要垫厚垫子？', answer: '延长落地时间 Δt，减小地面对人的作用力 F。' }], animationDesc: '受力物体：力箭头大小 ∝ F，作用时间宽度 ∝ Δt，I=F·Δt 与图示对应。', draw: drawImpulse },
+      { id: 'density', name: '密度', category: '流体与压强', formula: '\\rho = \\frac{m}{V}', formulaDetail: '密度 ρ = m/V，单位 kg/m³（或 g/cm³），表示单位体积的质量，是物质的特性。同体积下 ρ 大则质量大；同质量下 ρ 大则体积小。浮沉与 ρ_物、ρ_液 比较有关。', summary: 'ρ = m/V：质量大或体积小则密度大。动画中烧杯液高体现体积，浸入物块大小/颜色与密度关联，ρ 实时显示。', teachingPoints: ['ρ 与物质、状态、温度有关。', 'ρ_物 > ρ_液 下沉，ρ_物 < ρ_液 上浮。', '调节 m、V 观察 ρ 与物块表现。'], sliders: [{ id: 'massD', label: '质量 m (kg)', min: 0.5, max: 5, step: 0.5, value: 2, unit: 'kg' }, { id: 'volume', label: '体积 V (L)', min: 0.5, max: 5, step: 0.25, value: 2, unit: 'L' }], getDetails: (p) => `ρ = m/V = ${((p.massD || 2) / (p.volume || 2)).toFixed(2)} kg/L`, practice: { prompt: '让密度达到 1.0 kg/L（如纯水）', unit: 'kg/L', targets: [1], tolerance: 0.1, getCurrent: (p) => (p.massD || 2) / (p.volume || 2) }, extraPractice: [{ prompt: '冰能浮在水上，说明什么？', answer: 'ρ_冰 < ρ_水；水结冰时体积膨胀。' }], animationDesc: '烧杯液高 ∝ V，浸入物块：ρ=m/V 显示，物块大小/颜色与密度关联，调节 m/V 看变化。', draw: drawDensity }
     ];
+
+    function drawFreeFall(ctx, w, h, params) {
+      ctx.save();
+      const t = params.timeFall || 2;
+      const v = g * t;
+      const y = 0.5 * g * t * t;
+      const maxH = 0.5 * g * 16;
+      const scaleY = (h * 0.65) / maxH;
+      const originY = h * 0.12;
+      const groundY = h * 0.88;
+      const ballScreenY = originY + Math.min(y * scaleY / 2, groundY - originY - 24);
+      ctx.fillStyle = '#b8d4f0';
+      ctx.fillRect(0, 0, w, groundY);
+      ctx.fillStyle = '#6b5344';
+      ctx.fillRect(0, groundY, w, h - groundY);
+      const rulerX = w * 0.5 + 55;
+      for (let i = 0; i <= 80; i += 10) {
+        const yy = originY + (i / 80) * (groundY - originY);
+        ctx.strokeStyle = i % 20 === 0 ? '#2d3142' : '#7a8aa6';
+        ctx.lineWidth = i % 20 === 0 ? 2 : 1;
+        ctx.beginPath();
+        ctx.moveTo(rulerX, yy);
+        ctx.lineTo(rulerX + (i % 20 === 0 ? 18 : 10), yy);
+        ctx.stroke();
+        if (i % 20 === 0) {
+          ctx.fillStyle = '#2d3142';
+          ctx.font = '10px Poppins, sans-serif';
+          ctx.fillText(`${(i * maxH / 80).toFixed(0)}m`, rulerX + 22, yy + 4);
+        }
+      }
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.5, originY);
+      ctx.lineTo(w * 0.5, groundY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      const trail = 6;
+      for (let i = 1; i <= trail; i++) {
+        const ti = Math.max(0, t - i * 0.15);
+        const yi = 0.5 * g * ti * ti;
+        const by = originY + Math.min(yi * scaleY / 2, groundY - originY - 24);
+        ctx.fillStyle = `rgba(255,155,69,${0.15 * (1 - i / trail)})`;
+        ctx.beginPath();
+        ctx.arc(w * 0.5, by, 8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = '#ff9b45';
+      ctx.beginPath();
+      ctx.arc(w * 0.5, ballScreenY, 14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#c62828';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = 'bold 13px Poppins, sans-serif';
+      ctx.fillText(`t = ${t.toFixed(2)} s  →  v = gt = ${v.toFixed(1)} m/s`, 20, 28);
+      ctx.fillText(`h = ½gt² = ${y.toFixed(1)} m  （调节 t 观察位置与速度）`, 20, 48);
+      ctx.restore();
+    }
+
+    function drawHooke(ctx, w, h, params) {
+      ctx.save();
+      const k = params.k || 50;
+      const xCm = params.x != null ? params.x : 10;
+      const x = xCm / 100;
+      const F = k * x;
+      const cx = h * 0.5;
+      const anchorX = 70;
+      const naturalLen = 50;
+      const stretchPx = 2.5 * xCm;
+      const totalLen = naturalLen + stretchPx;
+      const nCoils = 10 + Math.floor(k / 15);
+      ctx.fillStyle = '#f0f4fa';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#5a6478';
+      ctx.fillRect(anchorX - 10, cx - 6, 20, 100);
+      ctx.strokeStyle = '#3d4556';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(anchorX - 10, cx - 6, 20, 100);
+      const coilW = 6;
+      for (let i = 0; i < nCoils; i++) {
+        const seg = totalLen / nCoils;
+        const x0 = anchorX + 12 + i * seg;
+        const x1 = anchorX + 12 + (i + 1) * seg;
+        ctx.strokeStyle = i % 2 === 0 ? '#8a9bab' : '#6a7a8e';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(x0, cx);
+        ctx.lineTo(x1, cx + (i % 2 === 0 ? coilW : -coilW));
+        ctx.stroke();
+      }
+      const blockX = anchorX + 12 + totalLen;
+      ctx.fillStyle = '#ff9b45';
+      ctx.fillRect(blockX - 8, cx - 28, 24, 56);
+      ctx.strokeStyle = '#c62828';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(blockX - 8, cx - 28, 24, 56);
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = '11px Poppins, sans-serif';
+      ctx.fillText('形变 x', blockX + 14, cx - 32);
+      ctx.beginPath();
+      ctx.moveTo(anchorX + 12, cx - 12);
+      ctx.lineTo(blockX - 8, cx - 12);
+      ctx.strokeStyle = '#c62828';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = '#c62828';
+      ctx.font = 'bold 14px Poppins, sans-serif';
+      ctx.fillText(`F = kx = ${k}×${xCm/100} = ${F.toFixed(1)} N`, 24, 32);
+      ctx.font = '12px Poppins, sans-serif';
+      ctx.fillStyle = '#5a6478';
+      ctx.fillText('调节 k 或 x：形变量 x 越大、k 越大，弹力 F 越大', 24, 52);
+      ctx.restore();
+    }
+
+    function drawPower(ctx, w, h, params) {
+      ctx.save();
+      const F = params.forceP || 50;
+      const v = params.velocity || 2;
+      const P = F * v;
+      const cy = h * 0.55;
+      const baseSpeed = 12 + v * 18;
+      const carX = 60 + (params.time || 0) * baseSpeed % (w - 140);
+      ctx.fillStyle = '#e0eaf8';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#9ca8b8';
+      ctx.fillRect(0, cy + 35, w, h - cy - 35);
+      ctx.strokeStyle = '#7a8596';
+      ctx.setLineDash([8, 8]);
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, cy + 38);
+      ctx.lineTo(w, cy + 38);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#4c7be5';
+      ctx.fillRect(carX, cy - 22, 70, 44);
+      ctx.strokeStyle = '#2d3d6b';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(carX, cy - 22, 70, 44);
+      const arrowLen = 12 + F / 8;
+      ctx.fillStyle = '#e65100';
+      ctx.beginPath();
+      ctx.moveTo(carX + 72, cy);
+      ctx.lineTo(carX + 72 + arrowLen, cy - 6);
+      ctx.lineTo(carX + 72 + arrowLen, cy + 6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#bf360c';
+      ctx.stroke();
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = 'bold 13px Poppins, sans-serif';
+      ctx.fillText(`P = F·v = ${F}×${v} = ${P.toFixed(0)} W`, 24, 28);
+      ctx.font = '12px Poppins, sans-serif';
+      ctx.fillText(`拉力 F↑ 或 速度 v↑ → 功率 P↑（小车移动速度随 v 变化）`, 24, 48);
+      ctx.restore();
+    }
+
+    function drawPendulum(ctx, w, h, params) {
+      ctx.save();
+      const L = params.lengthP || 1;
+      const T = 2 * Math.PI * Math.sqrt(L / g);
+      const cx = w * 0.5;
+      const topY = h * 0.14;
+      const scale = 75;
+      const angleMax = 0.35;
+      const phase = (params.time || 0) * 2 * Math.PI / Math.max(T, 0.1);
+      const angle = angleMax * Math.sin(phase);
+      const bobX = cx + scale * L * Math.sin(angle);
+      const bobY = topY + scale * L * Math.cos(angle);
+      ctx.fillStyle = '#f0f4fa';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#5a6478';
+      ctx.fillRect(cx - 20, topY - 8, 40, 16);
+      ctx.strokeStyle = '#3d4556';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(cx - 20, topY - 8, 40, 16);
+      ctx.strokeStyle = '#4a5568';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cx, topY);
+      ctx.lineTo(bobX, bobY);
+      ctx.stroke();
+      ctx.fillStyle = '#4c7be5';
+      ctx.beginPath();
+      ctx.arc(bobX, bobY, 14 + L * 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#2d3d6b';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = 'bold 13px Poppins, sans-serif';
+      ctx.fillText(`T = 2π√(L/g) = ${T.toFixed(2)} s  摆长 L = ${L} m`, 24, 28);
+      ctx.font = '12px Poppins, sans-serif';
+      ctx.fillText('调节 L：摆越长，周期 T 越大，摆动越慢', 24, 48);
+      ctx.restore();
+    }
+
+    function drawTotalReflection(ctx, w, h, params) {
+      ctx.save();
+      const n1 = params.n1 || 1.5;
+      const n2 = params.n2 || 1;
+      const C = n1 > n2 ? Math.asin(n2 / n1) * 180 / Math.PI : 90;
+      const mirrorY = h * 0.5;
+      const cx = w * 0.5;
+      ctx.fillStyle = 'rgba(80,150,220,0.35)';
+      ctx.fillRect(0, 0, w, mirrorY);
+      ctx.fillStyle = 'rgba(200,230,255,0.5)';
+      ctx.fillRect(0, mirrorY, w, h - mirrorY);
+      ctx.strokeStyle = 'rgba(76,123,229,0.6)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, 0);
+      ctx.lineTo(cx, h);
+      ctx.stroke();
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = '11px Poppins, sans-serif';
+      ctx.fillText('光密 n₁', cx - 50, mirrorY - 50);
+      ctx.fillText('光疏 n₂', cx - 50, mirrorY + 60);
+      const rayLen = 140;
+      const toRad = (d) => d * Math.PI / 180;
+      const drawRay = (angleDeg, color, fromY) => {
+        const rad = toRad(angleDeg);
+        const dx = rayLen * Math.sin(rad);
+        const dy = rayLen * Math.cos(rad);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(cx, fromY);
+        ctx.lineTo(cx + dx, fromY - dy);
+        ctx.stroke();
+      };
+      drawRay(C, '#e65100', mirrorY - 20);
+      drawRay(C - 15, '#1565c0', mirrorY - 20);
+      ctx.setLineDash([5, 5]);
+      ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cx, mirrorY);
+      ctx.lineTo(cx + 100, mirrorY - 80);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = 'bold 13px Poppins, sans-serif';
+      ctx.fillText(`sin C = n₂/n₁ = ${n2}/${n1}  →  临界角 C ≈ ${C.toFixed(1)}°`, 24, 28);
+      ctx.font = '12px Poppins, sans-serif';
+      ctx.fillText('入射角 ≥ C 时全反射；调节 n₁、n₂ 观察 C 变化', 24, 48);
+      ctx.restore();
+    }
+
+    function drawResistivity(ctx, w, h, params) {
+      ctx.save();
+      const L = params.lengthR || 1;
+      const S = params.areaS || 1;
+      const R = L / S;
+      const cy = h * 0.5;
+      const startX = 60;
+      const wireLen = 80 + L * 120;
+      const wireH = 6 + S * 10;
+      ctx.fillStyle = '#f0f4fa';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#6a7a8e';
+      ctx.fillRect(startX, cy - wireH / 2, wireLen, wireH);
+      ctx.strokeStyle = '#4a5568';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(startX, cy - wireH / 2, wireLen, wireH);
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = '11px Poppins, sans-serif';
+      ctx.fillText('L', startX + wireLen / 2 - 6, cy - wireH / 2 - 8);
+      ctx.fillText('S', startX + wireLen + 8, cy + 4);
+      ctx.fillStyle = '#c62828';
+      ctx.font = 'bold 14px Poppins, sans-serif';
+      ctx.fillText(`R = ρ·L/S  （相对）L/S = ${R.toFixed(2)}`, 24, 28);
+      ctx.fillStyle = '#5a6478';
+      ctx.font = '12px Poppins, sans-serif';
+      ctx.fillText('L↑ 或 S↓ → R 增大；调节 L、S 观察导线长短与粗细', 24, 48);
+      ctx.restore();
+    }
+
+    function drawConduction(ctx, w, h, params) {
+      ctx.save();
+      const dT = params.tempDiff || 30;
+      const d = params.thickness || 1;
+      const flux = dT / d;
+      const leftX = w * 0.28;
+      const rightX = w * 0.28 + 180 * d;
+      const cy = h * 0.5;
+      const wallH = 100;
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0, 0, w, h);
+      const grad = ctx.createLinearGradient(leftX, 0, rightX, 0);
+      grad.addColorStop(0, `rgb(255,${Math.max(80, 180 - dT)},60)`);
+      grad.addColorStop(0.5, `rgb(255,${200 - dT},120)`);
+      grad.addColorStop(1, 'rgb(180,210,255)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(leftX, cy - wallH / 2, rightX - leftX, wallH);
+      ctx.strokeStyle = '#5a6478';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(leftX, cy - wallH / 2, rightX - leftX, wallH);
+      const nArrows = 3 + Math.min(Math.floor(flux / 15), 6);
+      for (let i = 0; i < nArrows; i++) {
+        const tx = leftX + (i + 1) * (rightX - leftX) / (nArrows + 1);
+        ctx.fillStyle = `rgba(230,80,50,${0.3 + flux / 100})`;
+        ctx.beginPath();
+        ctx.moveTo(tx + 12, cy - 4);
+        ctx.lineTo(tx, cy);
+        ctx.lineTo(tx + 12, cy + 4);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = '11px Poppins, sans-serif';
+      ctx.fillText('热端', leftX - 28, cy - 55);
+      ctx.fillText('冷端', rightX + 8, cy - 55);
+      ctx.fillText(`ΔT=${dT}°C`, leftX - 32, cy + 62);
+      ctx.fillText(`d=${d}`, rightX + 6, cy + 62);
+      ctx.font = 'bold 13px Poppins, sans-serif';
+      ctx.fillText(`热流 ∝ ΔT/d = ${flux.toFixed(0)}   ΔT↑ 或 d↓ → 热流增强`, 24, 28);
+      ctx.restore();
+    }
+
+    function drawWorkEnergy(ctx, w, h, params) {
+      ctx.save();
+      const m = params.massW || 2;
+      const v0 = params.v0 || 0;
+      const v = params.vEnd || 6;
+      const Ek0 = 0.5 * m * v0 * v0;
+      const Ek = 0.5 * m * v * v;
+      const W = Ek - Ek0;
+      const cy = h * 0.5;
+      const trackY = cy + 20;
+      const x0 = 80;
+      const x1 = 280;
+      const prog = 0.4 + 0.2 * Math.sin((params.time || 0) * 2);
+      const blockX = x0 + (x1 - x0) * prog;
+      ctx.fillStyle = '#e8ecf4';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#9ca8b8';
+      ctx.fillRect(0, trackY - 8, w, 16);
+      ctx.fillStyle = '#4c7be5';
+      ctx.fillRect(blockX - 20, trackY - 28, 40, 56);
+      ctx.strokeStyle = '#2d3d6b';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(blockX - 20, trackY - 28, 40, 56);
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = '11px Poppins, sans-serif';
+      ctx.fillText(`v₀=${v0}`, x0 - 25, trackY - 35);
+      ctx.fillText(`v=${v}`, x1 + 10, trackY - 35);
+      ctx.font = 'bold 13px Poppins, sans-serif';
+      ctx.fillText(`W_合 = ΔE_k = ½m(v²−v₀²) = ${W.toFixed(1)} J`, 24, 28);
+      ctx.font = '12px Poppins, sans-serif';
+      ctx.fillText(`E_k初 = ${Ek0.toFixed(1)} J  →  E_k末 = ${Ek.toFixed(1)} J  调节 m、v₀、v 观察`, 24, 48);
+      ctx.restore();
+    }
+
+    function drawImpulse(ctx, w, h, params) {
+      ctx.save();
+      const F = params.forceI || 50;
+      const dt = params.dt || 0.5;
+      const I = F * dt;
+      const cx = w * 0.5;
+      const cy = h * 0.5;
+      const boxW = 50;
+      const arrowW = 8 + F / 12;
+      const durationW = 40 + dt * 80;
+      ctx.fillStyle = '#f0f4fa';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#8a9bab';
+      ctx.fillRect(cx - boxW / 2 - durationW, cy - 30, boxW + durationW * 2, 60);
+      ctx.strokeStyle = '#5a6478';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(cx - boxW / 2 - durationW, cy - 30, boxW + durationW * 2, 60);
+      ctx.fillStyle = '#4c7be5';
+      ctx.fillRect(cx - boxW / 2, cy - 22, boxW, 44);
+      ctx.strokeStyle = '#2d3d6b';
+      ctx.strokeRect(cx - boxW / 2, cy - 22, boxW, 44);
+      ctx.fillStyle = '#e65100';
+      ctx.beginPath();
+      ctx.moveTo(cx + boxW / 2 + 8, cy);
+      ctx.lineTo(cx + boxW / 2 + 20 + arrowW, cy - arrowW);
+      ctx.lineTo(cx + boxW / 2 + 20 + arrowW, cy + arrowW);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#bf360c';
+      ctx.stroke();
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = '11px Poppins, sans-serif';
+      ctx.fillText('Δt', cx - 8, cy + 42);
+      ctx.font = 'bold 13px Poppins, sans-serif';
+      ctx.fillText(`I = F·Δt = ${F}×${dt} = ${I.toFixed(1)} N·s  （冲量=动量变化）`, 24, 28);
+      ctx.font = '12px Poppins, sans-serif';
+      ctx.fillText('F 大或 Δt 长 → I 大；缓冲即增大 Δt 减小 F', 24, 48);
+      ctx.restore();
+    }
+
+    function drawDensity(ctx, w, h, params) {
+      ctx.save();
+      const m = params.massD || 2;
+      const V = params.volume || 2;
+      const rho = m / V;
+      const cx = w * 0.5;
+      const beakerBottom = h * 0.82;
+      const beakerW = 70;
+      const maxH = 120;
+      const fillH = Math.min(V * 28, maxH);
+      const liquidTop = beakerBottom - fillH;
+      ctx.fillStyle = '#f0f4fa';
+      ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = '#5a6478';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cx - beakerW / 2, liquidTop);
+      ctx.lineTo(cx - beakerW / 2 + 10, beakerBottom);
+      ctx.lineTo(cx + beakerW / 2 - 10, beakerBottom);
+      ctx.lineTo(cx + beakerW / 2, liquidTop);
+      ctx.closePath();
+      ctx.stroke();
+      const alpha = 0.25 + Math.min(rho / 2, 0.4);
+      ctx.fillStyle = `rgba(76,123,229,${alpha})`;
+      ctx.fill();
+      const blockSize = 18 + Math.min(V * 4, 25);
+      const blockY = beakerBottom - fillH / 2 - blockSize / 2;
+      ctx.fillStyle = rho > 1 ? '#8b7355' : rho > 0.8 ? '#9a8b6a' : '#a8b878';
+      ctx.fillRect(cx - blockSize / 2, blockY, blockSize, blockSize);
+      ctx.strokeStyle = '#5a4a3a';
+      ctx.strokeRect(cx - blockSize / 2, blockY, blockSize, blockSize);
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = '11px Poppins, sans-serif';
+      ctx.fillText('V', cx + beakerW / 2 + 10, beakerBottom - fillH / 2);
+      ctx.font = 'bold 13px Poppins, sans-serif';
+      ctx.fillText(`ρ = m/V = ${m}/${V} = ${rho.toFixed(2)} kg/L`, 24, 28);
+      ctx.font = '12px Poppins, sans-serif';
+      ctx.fillText('同体积 m↑→ρ↑；同质量 V↑→ρ↓  调节 m、V 观察', 24, 48);
+      ctx.restore();
+    }
 
     function drawPlaceholder(ctx, w, h, params) {
       const name = params.principleName || '本实验';
@@ -6118,18 +6758,20 @@
     }
 
     const learningNodes = [
-      { id: 'path-mech', label: '力学基础', principles: ['newton', 'friction', 'lever', 'pulley', 'circular', 'projectile'] },
+      { id: 'path-mech', label: '力学基础', principles: ['newton', 'freeFall', 'hooke', 'friction', 'lever', 'pulley', 'power', 'pendulum', 'workEnergy', 'impulse', 'circular', 'projectile', 'mechanicalEnergy'] },
       { id: 'path-mech-energy', label: '机械能', principles: ['energy', 'mechanicalEnergy'] },
       { id: 'path-fluid', label: '流体与压强', principles: ['buoyancy', 'pressure', 'solidPressure'] },
       { id: 'path-energy', label: '热与能量', principles: ['energyFlow', 'specificHeat'] },
       { id: 'path-wave', label: '振动与波', principles: ['harmonic', 'wave', 'doppler'] },
-      { id: 'path-optics', label: '几何光学', principles: ['reflection', 'refraction', 'lens', 'geometricOptics'] },
-      { id: 'path-electric', label: '电路入门', principles: ['ohm', 'series', 'parallel', 'capacitor', 'capacitorLab', 'fuse', 'joule'] },
+      { id: 'path-optics', label: '几何光学', principles: ['reflection', 'refraction', 'totalReflection', 'lens', 'geometricOptics'] },
+      { id: 'path-electric', label: '电路入门', principles: ['ohm', 'series', 'parallel', 'resistivity', 'capacitor', 'capacitorLab', 'fuse', 'joule'] },
       { id: 'path-charge', label: '静电与场', principles: ['coulomb'] },
       { id: 'path-magnet', label: '电磁与磁', principles: ['ampere', 'magnetic', 'induction'] },
       { id: 'path-modern', label: '近代物理', principles: ['photoelectric', 'buildAtom', 'atomicLevel', 'fission'] },
       { id: 'path-astro', label: '天文与宇宙', principles: ['gravityOrbit', 'blackHole'] },
-      { id: 'path-app', label: '综合应用', principles: ['hydroPower', 'eddyCurrent'] }
+      { id: 'path-app', label: '综合应用', principles: ['hydroPower', 'eddyCurrent'] },
+      { id: 'path-thermal', label: '热学', principles: ['specificHeat', 'conduction', 'thermal'] },
+      { id: 'path-fluid', label: '流体与压强', principles: ['pressure', 'buoyancy', 'density', 'solidPressure'] }
     ];
 
     const categoryOrder = ['力学', '流体与压强', '光学', '电学', '静电学', '波动与声', '热学', '电磁与现代物理', '近代物理', '天文与宇宙', '综合应用'];
