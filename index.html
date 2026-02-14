@@ -1,0 +1,2170 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>中学生物理可视化学习实验室</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-st1bKsEBxV1QDF5P3uOQfTyJV7bgidh+NangNh4pW7x1YgnSUZXoqBYwygJyI072waEt2zB6rSk2qIMm4DPNig==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    :root {
+      --primary: #4c7be5;
+      --accent: #ff9b45;
+      --bg: #eaf3ff;
+      --text: #1d2a44;
+      --panel: rgba(255, 255, 255, 0.92);
+      --card: #ffffff;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Poppins', 'Roboto', sans-serif;
+      background: radial-gradient(circle at top, #f6fbff 0%, var(--bg) 60%, #fdfdfd 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: url('data:image/svg+xml,%3Csvg width="160" height="160" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Ccircle cx="10" cy="10" r="2" fill="%23b9d4ff"/%3E%3Ccircle cx="110" cy="60" r="2" fill="%23d5e5ff"/%3E%3Ccircle cx="70" cy="150" r="3" fill="%23ffd5ad"/%3E%3C/svg%3E') repeat;
+      opacity: 0.35;
+      z-index: -2;
+      animation: floatBg 40s linear infinite;
+    }
+    @keyframes floatBg {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+      100% { transform: translateY(0); }
+    }
+    .app-shell {
+      display: flex;
+      min-height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+    .glow {
+      position: absolute;
+      width: 420px;
+      height: 420px;
+      background: radial-gradient(circle, rgba(76,123,229,0.18), transparent 60%);
+      border-radius: 50%;
+      filter: blur(10px);
+      animation: drift 18s ease-in-out infinite;
+      z-index: -1;
+    }
+    .glow.one { top: 5%; left: -100px; }
+    .glow.two { bottom: 5%; right: -120px; animation-delay: 4s; background: radial-gradient(circle, rgba(255,155,69,0.18), transparent 60%); }
+    @keyframes drift {
+      0% { transform: translate(0,0) scale(1); }
+      50% { transform: translate(40px,-30px) scale(1.1); }
+      100% { transform: translate(0,0) scale(1); }
+    }
+    .sidebar {
+      width: 240px;
+      background: var(--panel);
+      border-right: 1px solid rgba(76,123,229,0.15);
+      padding: 24px 18px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 2;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo i {
+      font-size: 34px;
+      color: var(--accent);
+      animation: pulse 3s ease-in-out infinite;
+    }
+    .logo h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+    .logo p {
+      margin: 2px 0 0;
+      color: #62729d;
+      font-size: 12px;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+    .sidebar h2 {
+      font-size: 15px;
+      margin: 12px 0 8px;
+      color: #4d5d86;
+    }
+    .outline {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .outline-group {
+      border-radius: 18px;
+      background: rgba(255,255,255,0.95);
+      box-shadow: 0 20px 35px rgba(39,74,143,0.08);
+      overflow: hidden;
+      transition: transform 0.2s ease;
+    }
+    .outline-group:hover {
+      transform: translateY(-2px);
+    }
+    .outline-group-header {
+      width: 100%;
+      border: none;
+      background: none;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .outline-group-header span {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .outline-group.collapsed .outline-group-header i:first-child {
+      transform: rotate(-90deg);
+    }
+    .outline-items {
+      max-height: 600px;
+      transition: max-height 0.25s ease;
+    }
+    .outline-group.collapsed .outline-items {
+      max-height: 0;
+      overflow: hidden;
+    }
+    .outline-item {
+      width: 100%;
+      border: none;
+      background: none;
+      text-align: left;
+      padding: 10px 22px;
+      font-size: 14px;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s;
+    }
+    .outline-item:hover {
+      background: rgba(76,123,229,0.07);
+    }
+    .outline-item.active {
+      border-color: var(--accent);
+      background: rgba(255,155,69,0.12);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .main-panel {
+      flex: 1;
+      padding: 28px 30px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 26px;
+      box-shadow: 0 35px 55px rgba(76,123,229,0.18);
+      padding: 26px 28px 30px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::after {
+      content: '';
+      position: absolute;
+      inset: 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(76,123,229,0.08);
+      pointer-events: none;
+    }
+    .visual-header {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: rgba(76,123,229,0.15);
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .visual-header h2 {
+      margin: 6px 0 0;
+      font-size: 26px;
+    }
+    .random-btn {
+      border: none;
+      background: linear-gradient(135deg, #ffb567, #ff8b2d);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 24px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 16px 30px rgba(255,155,69,0.35);
+      transition: transform 0.2s ease, box-shadow 0.2s;
+    }
+    .random-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 20px 40px rgba(255,155,69,0.4);
+    }
+    .random-btn.active {
+      animation: wiggle 0.4s ease;
+    }
+    @keyframes wiggle {
+      0% { transform: rotate(0deg); }
+      25% { transform: rotate(4deg); }
+      50% { transform: rotate(-4deg); }
+      75% { transform: rotate(2deg); }
+      100% { transform: rotate(0deg); }
+    }
+    canvas {
+      width: 100%;
+      height: 320px;
+      background: linear-gradient(135deg, #f3f9ff, #fffaf5);
+      border-radius: 22px;
+      margin: 18px 0;
+      border: 1px dashed rgba(76,123,229,0.25);
+      position: relative;
+      z-index: 1;
+    }
+    .sliders {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 18px;
+      position: relative;
+      z-index: 1;
+    }
+    .slider-control {
+      background: rgba(239,246,255,0.95);
+      border-radius: 20px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: inset 0 0 0 1px rgba(76,123,229,0.08);
+    }
+    .slider-control span {
+      font-size: 13px;
+      color: #5c6d96;
+    }
+    .slider-control input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+    .slider-input-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .slider-control input[type="number"] {
+      width: 80px;
+      padding: 4px 6px;
+      border-radius: 10px;
+      border: 1px solid rgba(76,123,229,0.25);
+      background: #fff;
+      font-family: 'Poppins', sans-serif;
+      font-size: 13px;
+      color: #2a3760;
+    }
+    .slider-value {
+      text-align: right;
+      font-weight: 600;
+      color: var(--accent);
+      font-size: 13px;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 18px;
+      margin-top: 12px;
+      position: relative;
+      z-index: 1;
+    }
+    .info-block {
+      background: #f6f9ff;
+      border-radius: 18px;
+      padding: 14px 16px;
+      min-height: 140px;
+      box-shadow: inset 0 0 0 1px rgba(76,123,229,0.06);
+    }
+    .info-block h3 {
+      margin: 0 0 6px;
+      font-size: 15px;
+      color: var(--primary);
+    }
+    .math-text {
+      font-family: 'Noto Serif', serif;
+      letter-spacing: 0.5px;
+    }
+    .formula-main {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+    .math-frac {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 0.95em;
+      margin: 0 4px;
+    }
+    .math-frac span {
+      padding: 0 6px;
+    }
+    .math-frac .top {
+      border-bottom: 1px solid currentColor;
+    }
+    .math-frac .bottom {
+      margin-top: 2px;
+    }
+    .formula-extras {
+      margin: 6px 0 0 16px;
+      padding-left: 6px;
+      color: #4d5d86;
+    }
+    .info-body {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #4f5c84;
+    }
+    .summary-main {
+      margin: 0 0 6px;
+      font-weight: 600;
+      color: #2a3760;
+    }
+    .teach-list {
+      margin: 4px 0 6px 16px;
+      padding-left: 6px;
+      color: #4c5e8e;
+    }
+    .teach-list li { margin-bottom: 4px; }
+    .detail-extra {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 6px 10px;
+      border-radius: 12px;
+      background: rgba(76,123,229,0.08);
+      color: #2f3f66;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .formula-detail {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #4d5d86;
+    }
+    .practice-block {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .practice-indicator {
+      width: 90px;
+      height: 90px;
+      position: relative;
+    }
+    .practice-indicator svg {
+      transform: rotate(-90deg);
+    }
+    .practice-indicator circle {
+      fill: none;
+      stroke-width: 10;
+      stroke-linecap: round;
+    }
+    .practice-value {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 14px;
+    }
+    .practice-status {
+      font-size: 13px;
+      color: #56618a;
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+    .practice-btns {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .practice-btns button {
+      border: none;
+      background: rgba(255,155,69,0.16);
+      color: var(--accent);
+      padding: 6px 12px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .path-section .path-track {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+    .path-node {
+      border: 2px solid transparent;
+      border-radius: 28px;
+      padding: 10px 18px;
+      background: rgba(76,123,229,0.08);
+      color: var(--primary);
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+    .path-node.active {
+      border-color: var(--accent);
+      background: rgba(255,155,69,0.15);
+      color: var(--accent);
+      box-shadow: 0 12px 26px rgba(255,155,69,0.35);
+    }
+    .path-node:hover {
+      transform: translateY(-3px);
+    }
+    .path-arrow {
+      color: var(--primary);
+      font-size: 18px;
+    }
+    @media (max-width: 700px) {
+      .app-shell {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+      }
+      .main-panel {
+        padding: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow one"></div>
+  <div class="glow two"></div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="logo">
+        <i class="fa-solid fa-atom"></i>
+        <div>
+          <h1>物理树屋</h1>
+          <p>Physics Playground</p>
+        </div>
+      </div>
+      <h2><i class="fa-solid fa-diagram-project"></i> 知识大纲</h2>
+      <div id="outlineContainer" class="outline"></div>
+    </aside>
+
+    <main class="main-panel">
+      <section class="card visual-card">
+        <div class="visual-header">
+          <div>
+            <span class="badge" id="visualBadge"><i class="fa-solid fa-layer-group"></i> 力学</span>
+            <h2 id="visualTitle">牛顿第二定律</h2>
+          </div>
+          <button id="randomBtn" class="random-btn"><i class="fa-solid fa-shuffle"></i> 随机示例</button>
+        </div>
+        <canvas id="principleCanvas"></canvas>
+        <div id="sliderControls" class="sliders"></div>
+        <div class="info-grid">
+          <div class="info-block" id="summaryBlock">
+            <h3><i class="fa-solid fa-lightbulb"></i> 知识总结</h3>
+            <div id="summaryText" class="info-body"></div>
+          </div>
+          <div class="info-block" id="formulaBlock">
+            <h3><i class="fa-solid fa-divide"></i> 原理·公式</h3>
+            <div id="formulaText" class="info-body"></div>
+          </div>
+          <div class="info-block" id="practiceBlock">
+            <h3><i class="fa-solid fa-flask"></i> 可视化练习题</h3>
+            <div class="practice-block">
+              <div class="practice-indicator">
+                <svg width="90" height="90">
+                  <circle cx="45" cy="45" r="34" stroke="rgba(76,123,229,0.2)"></circle>
+                  <circle id="practiceRing" cx="45" cy="45" r="34" stroke="var(--accent)" stroke-dasharray="213" stroke-dashoffset="213"></circle>
+                </svg>
+                <div class="practice-value" id="practiceValue">0%</div>
+              </div>
+              <div>
+                <p id="practicePrompt">调整滑块完成目标。</p>
+                <p class="practice-status" id="practiceStatus">努力使当前结果接近目标值。</p>
+                <div class="practice-btns">
+                  <button id="practiceReset"><i class="fa-solid fa-arrows-rotate"></i> 重新出题</button>
+                  <button id="practiceExplain"><i class="fa-solid fa-circle-info"></i> 教学提示</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card path-section">
+        <div class="visual-header">
+          <div>
+            <span class="badge"><i class="fa-solid fa-route"></i> 学习路线</span>
+            <h2>可视化物理学习路径</h2>
+          </div>
+          <p style="margin:0;color:#5b6690;font-size:13px;">点击节点即可跳转到推荐的知识模块</p>
+        </div>
+        <div id="learningPath" class="path-track"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const g = 9.8;
+    const n1 = 1.0;
+    const n2 = 1.33;
+    const kElectro = 8.99e9;
+
+    const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+    const toRad = (deg) => deg * Math.PI / 180;
+
+    const escapeHTML = (str) =>
+      str.replace(/&/g, '&amp;')
+         .replace(/</g, '&lt;')
+         .replace(/>/g, '&gt;');
+
+    function formatFormula(text = '') {
+      if (!text) return '';
+      let html = escapeHTML(text);
+      html = html.replace(/\\times/g, '&times;')
+                 .replace(/\\cdot/g, '&middot;');
+      html = html.replace(/\\frac{([^}]*)}{([^}]*)}/g, (_, top, bottom) => (
+        `<span class="math-frac"><span class="top">${top}</span><span class="bottom">${bottom}</span></span>`
+      ));
+      const symbolMap = [
+        ['\\\\Delta', 'Δ'],
+        ['\\\\alpha', 'α'],
+        ['\\\\beta', 'β'],
+        ['\\\\omega', 'ω'],
+        ['\\\\theta', 'θ'],
+        ['\\\\varphi', 'φ'],
+        ['\\\\varepsilon', 'ε'],
+        ['\\\\sin', 'sin'],
+        ['\\\\cos', 'cos'],
+        ['\\\\tan', 'tan'],
+        ['\\\\pm', '±'],
+        ['\\\\propto', '∝'],
+        ['\\\\cdots', '⋯']
+      ];
+      symbolMap.forEach(([pattern, symbol]) => {
+        html = html.replace(new RegExp(pattern, 'g'), symbol);
+      });
+      html = html.replace(/\^\{([^}]*)\}/g, '<sup>$1</sup>');
+      html = html.replace(/_\{([^}]*)\}/g, '<sub>$1</sub>');
+      return html;
+    }
+
+    function roundedRectPath(ctx, x, y, width, height, radius) {
+      const r = Math.min(radius, width / 2, height / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + width - r, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+      ctx.lineTo(x + width, y + height - r);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+      ctx.lineTo(x + r, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function drawArrow(ctx, fromX, fromY, toX, toY, color, width = 3) {
+      const headLen = 12;
+      const angle = Math.atan2(toY - fromY, toX - fromX);
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(toX, toY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(toX, toY);
+      ctx.lineTo(toX - headLen * Math.cos(angle - Math.PI / 6), toY - headLen * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(toX - headLen * Math.cos(angle + Math.PI / 6), toY - headLen * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawNewton(ctx, w, h, params) {
+      const groundY = h * 0.78;
+      ctx.save();
+      ctx.strokeStyle = '#cfe1ff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(30, groundY);
+      ctx.lineTo(w - 30, groundY);
+      ctx.stroke();
+
+      const blockWidth = 120;
+      const blockHeight = 65;
+      const baseX = w * 0.18;
+      const acc = params.force / params.mass;
+      const simTime = (params.time % 5);
+      const displacement = 0.5 * acc * simTime * simTime * 28;
+      const blockX = baseX + Math.min(displacement, w * 0.5);
+      const blockY = groundY - blockHeight - 12;
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = '#4c7be5';
+      ctx.lineWidth = 3;
+      roundedRectPath(ctx, blockX, blockY, blockWidth, blockHeight, 16);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#4c7be5';
+      ctx.beginPath();
+      ctx.arc(blockX + 30, groundY - 5, 10, 0, Math.PI * 2);
+      ctx.arc(blockX + blockWidth - 30, groundY - 5, 10, 0, Math.PI * 2);
+      ctx.fill();
+      const arrowLen = 30 + params.force * 8;
+      drawArrow(ctx, blockX + blockWidth + 5, blockY + blockHeight / 2, blockX + blockWidth + arrowLen, blockY + blockHeight / 2, '#ff9b45', 4);
+      ctx.fillStyle = '#ff9b45';
+      ctx.font = '16px Poppins, sans-serif';
+      ctx.fillText(`F=${params.force.toFixed(1)}N`, blockX + blockWidth + arrowLen + 10, blockY + blockHeight / 2 + 6);
+      ctx.fillStyle = '#4c7be5';
+      ctx.fillText(`m=${params.mass.toFixed(1)}kg`, blockX + 6, blockY - 12);
+      ctx.fillText(`a=${acc.toFixed(2)}m/s²`, blockX + 6, blockY + blockHeight + 24);
+      ctx.fillText(`v≈${(acc * simTime).toFixed(2)}m/s`, blockX + 6, blockY + blockHeight + 42);
+      ctx.restore();
+    }
+
+    function drawBuoyancy(ctx, w, h, params) {
+      const tankX = w * 0.12;
+      const tankWidth = w * 0.76;
+      const tankTop = h * 0.15;
+      const tankHeight = h * 0.7;
+      ctx.save();
+      ctx.fillStyle = '#d8ecff';
+      roundedRectPath(ctx, tankX, tankTop, tankWidth, tankHeight, 26);
+      ctx.fill();
+      ctx.fillStyle = '#bfe3ff';
+      roundedRectPath(ctx, tankX + 8, tankTop + 50, tankWidth - 16, tankHeight - 80, 20);
+      ctx.fill();
+      for (let i = 0; i < 9; i++) {
+        const bx = tankX + 20 + (i * tankWidth) / 9 + Math.sin(params.time * 2 + i) * 8;
+        const by = tankTop + tankHeight - ((params.time * 40 + i * 25) % (tankHeight - 120));
+        ctx.globalAlpha = 0.4;
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(bx, by, 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      const blockSize = 90;
+      const baseY = tankTop + tankHeight - blockSize - 25;
+      const densityDiff = params.density - 1;
+      const blockY = clamp(baseY - densityDiff * 60, tankTop + 20, baseY);
+      const blockX = w * 0.44;
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = '#4c7be5';
+      ctx.lineWidth = 3;
+      roundedRectPath(ctx, blockX, blockY, blockSize, blockSize, 14);
+      ctx.fill();
+      ctx.stroke();
+      const centerX = blockX + blockSize / 2;
+      const volumeM3 = params.volume / 1000;
+      const buoy = 1000 * g * volumeM3;
+      const weight = params.density * 1000 * g * volumeM3;
+      const scale = 0.02;
+      drawArrow(ctx, centerX, blockY + blockSize + 6, centerX, blockY + blockSize + 6 - buoy * scale, '#ff9b45', 4);
+      drawArrow(ctx, centerX, blockY - 6, centerX, blockY - 6 + weight * scale, '#4c7be5', 4);
+      ctx.restore();
+    }
+
+    function drawLever(ctx, w, h, params) {
+      const pivotX = w * 0.5;
+      const pivotY = h * 0.68;
+      ctx.save();
+      ctx.strokeStyle = '#cfdcff';
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(w * 0.15, pivotY);
+      ctx.lineTo(w * 0.85, pivotY);
+      ctx.stroke();
+      ctx.fillStyle = '#4c7be5';
+      ctx.beginPath();
+      ctx.moveTo(pivotX - 24, pivotY);
+      ctx.lineTo(pivotX, pivotY - 70);
+      ctx.lineTo(pivotX + 24, pivotY);
+      ctx.closePath();
+      ctx.fill();
+      const leftPos = pivotX - params.leftArm * 45;
+      const rightArm = 3;
+      const rightPos = pivotX + rightArm * 45;
+      const wobble = Math.sin(params.time) * 6;
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = '#4c7be5';
+      roundedRectPath(ctx, leftPos - 25, pivotY - 90 - wobble, 60, 55, 12);
+      ctx.fill();
+      ctx.stroke();
+      roundedRectPath(ctx, rightPos - 25, pivotY - 80 + wobble, 60, 55, 12);
+      ctx.fill();
+      ctx.stroke();
+      drawArrow(ctx, leftPos, pivotY - 90 - wobble, leftPos, pivotY - 90 - wobble + params.leftForce * 9, '#ff9b45', 4);
+      const needed = params.leftForce * params.leftArm / rightArm;
+      drawArrow(ctx, rightPos, pivotY - 80 + wobble, rightPos, pivotY - 80 + wobble + needed * 9, '#4c7be5', 4);
+      ctx.restore();
+    }
+
+    function drawReflection(ctx, w, h, params) {
+      const mirrorY = h * 0.7;
+      ctx.save();
+      ctx.strokeStyle = '#9ebeff';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(40, mirrorY);
+      ctx.lineTo(w - 40, mirrorY);
+      ctx.stroke();
+      const originX = w / 2;
+      ctx.setLineDash([6, 6]);
+      ctx.strokeStyle = '#ffcf80';
+      ctx.beginPath();
+      ctx.moveTo(originX, mirrorY - 150);
+      ctx.lineTo(originX, mirrorY + 60);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      const angle = toRad(params.angle);
+      const len = 160;
+      ctx.strokeStyle = '#4c7be5';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(originX - Math.sin(angle) * len, mirrorY - Math.cos(angle) * len);
+      ctx.lineTo(originX, mirrorY);
+      ctx.stroke();
+      ctx.strokeStyle = '#ff9b45';
+      ctx.beginPath();
+      ctx.moveTo(originX, mirrorY);
+      ctx.lineTo(originX + Math.sin(angle) * len, mirrorY - Math.cos(angle) * len);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawRefraction(ctx, w, h, params) {
+      const interfaceY = h * 0.5;
+      ctx.save();
+      ctx.fillStyle = '#fefefe';
+      ctx.fillRect(0, 0, w, interfaceY);
+      ctx.fillStyle = '#cfe6ff';
+      ctx.fillRect(0, interfaceY, w, h - interfaceY);
+      ctx.strokeStyle = '#98b6ff';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(30, interfaceY);
+      ctx.lineTo(w - 30, interfaceY);
+      ctx.stroke();
+      const originX = w / 2;
+      ctx.setLineDash([6, 6]);
+      ctx.strokeStyle = '#ffcf80';
+      ctx.beginPath();
+      ctx.moveTo(originX, interfaceY - 150);
+      ctx.lineTo(originX, interfaceY + 150);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      const angle = toRad(params.angle);
+      const sinTheta2 = clamp((n1 / n2) * Math.sin(angle), -0.999, 0.999);
+      const theta2 = Math.asin(sinTheta2);
+      const len = 170;
+      ctx.strokeStyle = '#4c7be5';
+      ctx.beginPath();
+      ctx.moveTo(originX - Math.sin(angle) * len, interfaceY - Math.cos(angle) * len);
+      ctx.lineTo(originX, interfaceY);
+      ctx.stroke();
+      ctx.strokeStyle = '#ff9b45';
+      ctx.beginPath();
+      ctx.moveTo(originX, interfaceY);
+      ctx.lineTo(originX + Math.sin(theta2) * len, interfaceY + Math.cos(theta2) * len);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawOhm(ctx, w, h, params) {
+      const top = h * 0.35;
+      const bottom = h * 0.75;
+      const left = w * 0.2;
+      const right = w * 0.8;
+      ctx.save();
+      ctx.strokeStyle = '#4c7be5';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(left, bottom);
+      ctx.lineTo(left, top);
+      ctx.lineTo(right, top);
+      ctx.lineTo(right, bottom);
+      ctx.lineTo(left, bottom);
+      ctx.stroke();
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(left - 25, (top + bottom) / 2 - 15);
+      ctx.lineTo(left - 25, (top + bottom) / 2 + 15);
+      ctx.moveTo(left - 15, (top + bottom) / 2 - 35);
+      ctx.lineTo(left - 15, (top + bottom) / 2 + 35);
+      ctx.stroke();
+      ctx.strokeStyle = '#ff9b45';
+      ctx.lineWidth = 3;
+      const zigStart = w * 0.45;
+      const zigEnd = w * 0.65;
+      ctx.beginPath();
+      ctx.moveTo(zigStart, top);
+      const segments = 6;
+      for (let i = 1; i <= segments; i++) {
+        const x = zigStart + (i / segments) * (zigEnd - zigStart);
+        const y = top + (i % 2 === 0 ? -18 : 18);
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(zigEnd, top);
+      ctx.stroke();
+      const pathLength = 2 * (right - left) + 2 * (bottom - top);
+      const dots = 12;
+      const current = params.voltage / params.resistance;
+      const speed = Math.max(0.5, current * 15);
+      for (let i = 0; i < dots; i++) {
+        const progress = ((params.time * speed) + i / dots) % 1;
+        const pos = progress * pathLength;
+        let x, y;
+        if (pos < (right - left)) {
+          x = left + pos;
+          y = top;
+        } else if (pos < (right - left) + (bottom - top)) {
+          x = right;
+          y = top + (pos - (right - left));
+        } else if (pos < 2 * (right - left) + (bottom - top)) {
+          x = right - (pos - (right - left) - (bottom - top));
+          y = bottom;
+        } else {
+          x = left;
+          y = bottom - (pos - (2 * (right - left) + (bottom - top)));
+        }
+        ctx.fillStyle = '#4c7be5';
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawSeries(ctx, w, h, params) {
+      const top = h * 0.4;
+      const bottom = h * 0.72;
+      const left = w * 0.15;
+      const right = w * 0.85;
+      ctx.save();
+      ctx.strokeStyle = '#4c7be5';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(left, bottom);
+      ctx.lineTo(left, top);
+      ctx.lineTo(right, top);
+      ctx.lineTo(right, bottom);
+      ctx.lineTo(left, bottom);
+      ctx.stroke();
+      const resistorWidth = 60;
+      const resistorSpacing = 40;
+      const r1X = w * 0.35;
+      const r2X = r1X + resistorWidth + resistorSpacing;
+      const resistorY = top - 18;
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = '#ff9b45';
+      ctx.lineWidth = 2.5;
+      roundedRectPath(ctx, r1X, resistorY, resistorWidth, 38, 12);
+      ctx.fill();
+      ctx.stroke();
+      roundedRectPath(ctx, r2X, resistorY, resistorWidth, 38, 12);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#ff9b45';
+      ctx.font = '13px Poppins, sans-serif';
+      ctx.fillText('R1', r1X + 20, resistorY + 24);
+      ctx.fillText('R2', r2X + 20, resistorY + 24);
+      const current = params.voltage / (params.r1 + params.r2);
+      const maxDots = 18;
+      for (let i = 0; i < maxDots; i++) {
+        const phase = (i / maxDots + params.time * current) % 1;
+        const x = left + phase * (right - left);
+        ctx.beginPath();
+        ctx.fillStyle = '#4c7be5';
+        ctx.arc(x, bottom - 12, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawEnergy(ctx, w, h, params) {
+      const groundY = h * 0.82;
+      ctx.save();
+      ctx.fillStyle = '#cfe0ff';
+      ctx.beginPath();
+      ctx.moveTo(w * 0.15, groundY);
+      ctx.lineTo(w * 0.85, groundY);
+      ctx.lineTo(w * 0.7, groundY - 210);
+      ctx.closePath();
+      ctx.fill();
+      const heightFactor = params.height / 10;
+      const ballX = w * 0.2 + heightFactor * w * 0.5 - Math.sin(params.time) * 12;
+      const ballY = groundY - heightFactor * 190 - 20;
+      ctx.fillStyle = '#ff9b45';
+      ctx.beginPath();
+      ctx.arc(ballX, ballY, 20, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#4c7be5';
+      ctx.font = '16px Poppins, sans-serif';
+      ctx.fillText(`Ep=${(params.mass * g * params.height).toFixed(1)}J`, ballX - 30, ballY - 30);
+      ctx.restore();
+    }
+
+    function drawMomentum(ctx, w, h, params) {
+      const trackY = h * 0.78;
+      ctx.save();
+      ctx.strokeStyle = '#d8e2ff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(30, trackY);
+      ctx.lineTo(w - 30, trackY);
+      ctx.stroke();
+      const blockHeight = 55;
+      const block1Width = 70;
+      const block2Width = 80;
+      const cycle = (params.time % 4) / 4;
+      const collisionX = w * 0.55;
+      let block1X, block2X;
+      if (cycle < 0.5) {
+        const t = cycle / 0.5;
+        block1X = w * 0.15 + t * (collisionX - w * 0.15 - block1Width);
+        block2X = w * 0.72;
+      } else {
+        const t = (cycle - 0.5) / 0.5;
+        const v1p = ((params.mass1 - params.mass2) / (params.mass1 + params.mass2)) * params.v1;
+        const v2p = (2 * params.mass1 / (params.mass1 + params.mass2)) * params.v1;
+        block1X = collisionX - block1Width + v1p * t * 6;
+        block2X = w * 0.65 + v2p * t * 5;
+      }
+      block1X = clamp(block1X, 30, w - block1Width - 30);
+      block2X = clamp(block2X, 30, w - block2Width - 30);
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = '#4c7be5';
+      roundedRectPath(ctx, block1X, trackY - blockHeight - 10, block1Width, blockHeight, 10);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = '#ff9b45';
+      roundedRectPath(ctx, block2X, trackY - blockHeight - 10, block2Width, blockHeight, 10);
+      ctx.fill();
+      ctx.stroke();
+      drawArrow(ctx, block1X + block1Width / 2, trackY - blockHeight - 25, block1X + block1Width / 2 + params.v1 * 4, trackY - blockHeight - 25, '#4c7be5', 3);
+      ctx.restore();
+    }
+
+    function drawCircular(ctx, w, h, params) {
+      const centerX = w / 2;
+      const centerY = h / 2;
+      const radius = Math.min(w, h) * 0.25 + params.radius * 6;
+      ctx.save();
+      ctx.strokeStyle = '#dde5ff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      const angle = params.time * params.speed * 0.4;
+      const x = centerX + radius * Math.cos(angle);
+      const y = centerY + radius * Math.sin(angle);
+      ctx.fillStyle = '#ff9b45';
+      ctx.beginPath();
+      ctx.arc(x, y, 12, 0, Math.PI * 2);
+      ctx.fill();
+      drawArrow(ctx, x, y, x - Math.sin(angle) * 40, y + Math.cos(angle) * 40, '#4c7be5', 3);
+      ctx.restore();
+    }
+
+    function drawProjectile(ctx, w, h, params) {
+      const baseX = w * 0.08;
+      const baseY = h * 0.85;
+      const speed = params.speed;
+      const angle = toRad(params.angle);
+      const range = (speed * speed * Math.sin(2 * angle)) / g;
+      const totalTime = (2 * speed * Math.sin(angle)) / g;
+      const scale = w * 0.75 / Math.max(range, 5);
+      ctx.save();
+      ctx.strokeStyle = '#d4e1ff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(baseX, baseY);
+      ctx.lineTo(baseX + w * 0.8, baseY);
+      ctx.stroke();
+      ctx.strokeStyle = '#4c7be5';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      for (let i = 0; i <= 40; i++) {
+        const t = (i / 40) * totalTime;
+        const x = speed * Math.cos(angle) * t;
+        const y = speed * Math.sin(angle) * t - 0.5 * g * t * t;
+        const canvasX = baseX + x * scale;
+        const canvasY = baseY - y * scale;
+        if (i === 0) ctx.moveTo(canvasX, canvasY);
+        else ctx.lineTo(canvasX, canvasY);
+      }
+      ctx.stroke();
+      const progress = (params.time % totalTime);
+      const px = speed * Math.cos(angle) * progress;
+      const py = speed * Math.sin(angle) * progress - 0.5 * g * progress * progress;
+      const drawX = baseX + px * scale;
+      const drawY = baseY - py * scale;
+      ctx.fillStyle = '#ff9b45';
+      ctx.beginPath();
+      ctx.arc(drawX, drawY, 10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawHarmonic(ctx, w, h, params) {
+      const baseY = h * 0.6;
+      const wallX = w * 0.15;
+      ctx.save();
+      ctx.fillStyle = '#dfe7ff';
+      ctx.fillRect(wallX - 20, baseY - 60, 20, 200);
+      const displacement = params.amplitude * Math.sin(params.time * params.frequency * Math.PI);
+      const massX = w * 0.35 + displacement;
+      ctx.strokeStyle = '#4c7be5';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(wallX, baseY);
+      const coils = 7;
+      const length = massX - wallX - 20;
+      for (let i = 0; i < coils; i++) {
+        const x = wallX + (i / coils) * length;
+        const y = baseY + (i % 2 === 0 ? -22 : 22);
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(massX, baseY);
+      ctx.stroke();
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = '#ff9b45';
+      roundedRectPath(ctx, massX, baseY - 35, 60, 70, 12);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawWave(ctx, w, h, params) {
+      const mid = h * 0.5;
+      ctx.save();
+      ctx.strokeStyle = '#e0eaff';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, mid);
+      ctx.lineTo(w, mid);
+      ctx.stroke();
+      const amplitude = params.amplitude;
+      const freq = params.frequency;
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#4c7be5';
+      ctx.beginPath();
+      for (let x = 0; x <= w; x++) {
+        const y = mid + amplitude * Math.sin((x / 60) * freq * Math.PI - params.time);
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.strokeStyle = '#ff9b45';
+      ctx.beginPath();
+      for (let x = 0; x <= w; x++) {
+        const y = mid + amplitude * 0.8 * Math.sin((x / 60) * (freq + 0.4) * Math.PI - params.time * 1.2);
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawDoppler(ctx, w, h, params) {
+      const baseX = w * 0.25 + Math.sin(params.time * 0.5) * 30;
+      const baseY = h * 0.5;
+      ctx.save();
+      ctx.fillStyle = '#ff9b45';
+      ctx.beginPath();
+      ctx.arc(baseX, baseY, 18, 0, Math.PI * 2);
+      ctx.fill();
+      const baseSpacing = 30;
+      const approachSpacing = baseSpacing * (1 - params.sourceSpeed / 200);
+      const recedeSpacing = baseSpacing * (1 + params.sourceSpeed / 200);
+      ctx.strokeStyle = '#4c7be5';
+      ctx.lineWidth = 2;
+      for (let i = 1; i <= 6; i++) {
+        ctx.beginPath();
+        ctx.arc(baseX + i * approachSpacing, baseY, i * approachSpacing, -0.8, 0.8);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(baseX - i * recedeSpacing, baseY, i * recedeSpacing, Math.PI - 0.8, Math.PI + 0.8);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawThermal(ctx, w, h, params) {
+      const baseY = h * 0.6;
+      ctx.save();
+      ctx.fillStyle = '#dfe8ff';
+      ctx.fillRect(w * 0.15, baseY, w * 0.7, 6);
+      const baseLength = w * 0.4;
+      const expansion = params.alpha * 1e-6 * params.deltaT;
+      const rodLength = baseLength * (1 + expansion * 120);
+      ctx.fillStyle = '#ffb98f';
+      ctx.fillRect(w * 0.3, baseY - 25, rodLength, 20);
+      ctx.restore();
+    }
+
+    function drawMagnetic(ctx, w, h, params) {
+      const centerX = w * 0.5;
+      const centerY = h * 0.45;
+      ctx.save();
+      ctx.strokeStyle = '#d1deff';
+      ctx.lineWidth = 1.5;
+      for (let i = -3; i <= 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(60, centerY + i * 22);
+        ctx.lineTo(w - 60, centerY + i * 22);
+        ctx.stroke();
+        for (let j = 70; j < w - 60; j += 40) {
+          ctx.beginPath();
+          ctx.moveTo(j - 6, centerY + i * 22 - 6);
+          ctx.lineTo(j + 6, centerY + i * 22 + 6);
+          ctx.moveTo(j + 6, centerY + i * 22 - 6);
+          ctx.lineTo(j - 6, centerY + i * 22 + 6);
+          ctx.stroke();
+        }
+      }
+      const radius = 90;
+      const angle = params.time * params.velocity * params.magneticField * 0.2;
+      const x = centerX + radius * Math.cos(angle);
+      const y = centerY + radius * Math.sin(angle);
+      ctx.fillStyle = '#ff9b45';
+      ctx.beginPath();
+      ctx.arc(x, y, 12, 0, Math.PI * 2);
+      ctx.fill();
+      drawArrow(ctx, x, y, x - Math.sin(angle) * 40, y + Math.cos(angle) * 40, '#4c7be5', 4);
+      ctx.restore();
+    }
+
+    function drawEnergyFlow(ctx, w, h, params) {
+      const centerY = h * 0.5;
+      ctx.save();
+      ctx.strokeStyle = '#dce5ff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(30, centerY);
+      ctx.lineTo(w - 30, centerY);
+      ctx.stroke();
+      const amplitude = params.tempDiff * 8;
+      ctx.strokeStyle = '#ff9b45';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      for (let x = 30; x <= w - 30; x++) {
+        const y = centerY + amplitude * Math.sin((x / 60) + params.time * 0.8);
+        if (x === 30) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawPressure(ctx, w, h, params) {
+      const tankX = w * 0.2;
+      const tankW = w * 0.6;
+      const tankTop = h * 0.15;
+      const tankH = h * 0.7;
+      ctx.save();
+      ctx.strokeStyle = '#9fbdfd';
+      ctx.lineWidth = 3;
+      roundedRectPath(ctx, tankX, tankTop, tankW, tankH, 20);
+      ctx.stroke();
+      const fluidRatio = clamp(params.depth / 15, 0, 1);
+      const fluidHeight = (tankH - 30) * fluidRatio;
+      const gradient = ctx.createLinearGradient(0, tankTop, 0, tankTop + tankH);
+      gradient.addColorStop(0, '#d9f0ff');
+      gradient.addColorStop(1, '#8cc2ff');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(tankX + 4, tankTop + tankH - fluidHeight, tankW - 8, fluidHeight);
+      const gaugeX = tankX + tankW + 30;
+      const maxBar = 180;
+      const barHeight = fluidRatio * maxBar;
+      ctx.fillStyle = '#ffb26b';
+      ctx.fillRect(gaugeX, tankTop + tankH - barHeight, 20, barHeight);
+      ctx.fillStyle = '#4c7be5';
+      ctx.font = '14px Poppins, sans-serif';
+      ctx.fillText(`${params.depth.toFixed(1)}m`, gaugeX - 8, tankTop + tankH + 20);
+      drawArrow(ctx, tankX + tankW / 2, tankTop + tankH - fluidHeight, tankX + tankW / 2, tankTop + tankH - 10, '#ff9b45', 4);
+      ctx.restore();
+    }
+
+    function drawCoulomb(ctx, w, h, params) {
+      const leftX = w * 0.3;
+      const rightX = w * 0.7;
+      const centerY = h * 0.5;
+      ctx.save();
+      ctx.fillStyle = params.q1 >= 0 ? '#ff7878' : '#4c7be5';
+      ctx.beginPath();
+      ctx.arc(leftX, centerY, 35, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = '16px Poppins, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(params.q1 >= 0 ? '+' : '-', leftX, centerY + 6);
+      ctx.fillStyle = params.q2 >= 0 ? '#ff7878' : '#4c7be5';
+      ctx.beginPath();
+      ctx.arc(rightX, centerY, 35, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.fillText(params.q2 >= 0 ? '+' : '-', rightX, centerY + 6);
+      const lines = 6;
+      for (let i = -lines; i <= lines; i++) {
+        const offset = (i / lines) * 40;
+        ctx.strokeStyle = '#fcd6a8';
+        ctx.beginPath();
+        ctx.moveTo(leftX + 35, centerY + offset);
+        ctx.bezierCurveTo(w / 2, centerY + offset + Math.sin(i) * 30, w / 2, centerY + offset - Math.sin(i) * 30, rightX - 35, centerY + offset);
+        ctx.stroke();
+      }
+      const force = kElectro * Math.abs(params.q1 * 1e-6 * params.q2 * 1e-6) / Math.pow(params.distance, 2);
+      const direction = params.q1 * params.q2 >= 0 ? -1 : 1;
+      const arrowLen = clamp(force * 80, 25, 120);
+      drawArrow(ctx, leftX + 35, centerY, leftX + 35 + direction * arrowLen, centerY, '#ff9b45', 4);
+      drawArrow(ctx, rightX - 35, centerY, rightX - 35 - direction * arrowLen, centerY, '#ff9b45', 4);
+      ctx.restore();
+    }
+
+    function drawInduction(ctx, w, h, params) {
+      const centerY = h * 0.5;
+      ctx.save();
+      ctx.strokeStyle = '#d4deff';
+      ctx.lineWidth = 2;
+      for (let i = -3; i <= 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(w * 0.55, centerY + i * 20);
+        ctx.lineTo(w - 40, centerY + i * 20);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#ff9b45';
+      const magnetX = w * 0.2 + Math.sin(params.time * params.speed * 0.5) * 40;
+      ctx.fillRect(magnetX - 20, centerY - 50, 40, 100);
+      ctx.fillStyle = '#4c7be5';
+      ctx.fillRect(magnetX - 40, centerY - 50, 20, 100);
+      ctx.fillStyle = '#fff';
+      ctx.font = '12px Poppins, sans-serif';
+      ctx.fillText('N', magnetX - 35, centerY - 60);
+      ctx.fillText('S', magnetX + 15, centerY - 60);
+      ctx.strokeStyle = '#4c7be5';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.55, centerY - 70);
+      ctx.lineTo(w * 0.55, centerY + 70);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(w * 0.55 + 10, centerY, 60, Math.PI / 2, -Math.PI / 2, true);
+      ctx.arc(w * 0.55 + 20, centerY, 60, -Math.PI / 2, Math.PI / 2, true);
+      ctx.stroke();
+      drawArrow(ctx, magnetX + 20, centerY, magnetX + 80, centerY, '#ff9b45', 3);
+      ctx.restore();
+    }
+
+    const principles = [
+      {
+        id: 'newton',
+        name: '牛顿第二定律',
+        category: '力学',
+        formula: 'F = m \\times a',
+        formulaDetail: '判断合力方向后，把所有力作矢量合成得到 F，再用 F 与质量 m 推算加速度 a；若只沿一维运动，可直接代符号计算。',
+        summary: '牛顿第二定律把“受力”与“运动状态改变”直接关联，是所有动力学题目的核心。通过控制力或质量就能定量调节加速度，解释起跑、刹车、火箭升空等现象。',
+        teachingPoints: [
+          '先画受力图并标注方向，再列 F = m·a 的分量形式。',
+          '始终保持单位一致，推荐用牛顿(N)、千克(kg)、米每二次方秒(m/s²)。'
+        ],
+        formulaSteps: [
+          '第一步：列受力方程，明确合力 F 的大小与方向。',
+          '第二步：把质量 m 换算成 kg，必要时注意 kg↔g 的换算。',
+          '第三步：代入 a = F / m，写出数值与方向说明。'
+        ],
+        sliders: [
+          { id: 'force', label: '拉力 F (N)', min: 1, max: 10, step: 0.5, value: 6, unit: 'N' },
+          { id: 'mass', label: '质量 m (kg)', min: 1, max: 5, step: 0.5, value: 2, unit: 'kg' }
+        ],
+        getDetails: (p) => `实时加速度 a = ${(p.force / p.mass).toFixed(2)} m/s²`,
+        practice: {
+          prompt: '调节 F 与 m，使加速度达到目标 a*',
+          unit: 'm/s²',
+          targets: [1.5, 2, 2.5, 3.2, 3.8],
+          tolerance: 0.15,
+          getCurrent: (p) => p.force / p.mass
+        },
+        draw: drawNewton
+      },
+      {
+        id: 'buoyancy',
+        name: '浮力（阿基米德）',
+        category: '流体与压强',
+        formula: 'F_{浮} = ρ_{液} \\times g \\times V_{排}',
+        formulaDetail: '把排开液体的体积换算成立方米，再乘以液体密度与 g，即得向上的浮力。若浮力与重力相等，物体悬浮；若浮力更大，物体上浮。',
+        summary: '阿基米德原理说明浮力本质上来自被挤开的液体重量。改变密度或浸入体积，就能判断沉浮与露出液面的高度，是船舶和潜水艇设计的基础。',
+        teachingPoints: [
+          '比较浮力与重力的大小即可判断运动趋势。',
+          '若题目给出漂浮比例，可用 ρ物 / ρ液 = V排 / V总 快速求占比。'
+        ],
+        formulaSteps: [
+          '1) 把体积换算为 m³，密度换算为 kg/m³。',
+          '2) 代入 F浮 = ρ液 g V排 求浮力，另算 G = ρ物 g V排。',
+          '3) 比较 F浮 与 G，判断上浮/下沉或悬浮。'
+        ],
+        sliders: [
+          { id: 'density', label: '物体密度 ρ (g/cm³)', min: 0.5, max: 2, step: 0.1, value: 0.9, unit: 'g/cm³' },
+          { id: 'volume', label: '排开体积 V (L)', min: 0.5, max: 2.5, step: 0.1, value: 1.2, unit: 'L' }
+        ],
+        getDetails: (p) => {
+          const volumeM3 = p.volume / 1000;
+          const buoy = 1000 * g * volumeM3;
+          const weight = p.density * 1000 * g * volumeM3;
+          return `浮力≈${buoy.toFixed(1)}N，重力≈${weight.toFixed(1)}N → ${buoy >= weight ? '上浮' : '下沉'}`;
+        },
+        practice: {
+          prompt: '让浮力与重力几乎相等，体验“悬浮”状态',
+          unit: 'N',
+          targets: [0],
+          tolerance: 0.5,
+          type: 'difference',
+          targetLabel: '浮力 - 重力 → 0',
+          getCurrent: (p) => {
+            const volumeM3 = p.volume / 1000;
+            const buoy = 1000 * g * volumeM3;
+            const weight = p.density * 1000 * g * volumeM3;
+            return buoy - weight;
+          },
+          format: (val) => `${val.toFixed(1)}N`
+        },
+        draw: drawBuoyancy
+      },
+      {
+        id: 'lever',
+        name: '杠杆原理',
+        category: '力学',
+        formula: 'F_{1} \\times L_{1} = F_{2} \\times L_{2}',
+        formulaDetail: '把力和力臂按“力矩=力×到支点的垂直距离”配对，左侧与右侧力矩相等即可平衡。',
+        summary: '杠杆告诉我们“省力换距离”。改变力臂长度，家庭中的钳子、撬棍都能轻松放大力量，背后都是同一个力矩守恒思想。',
+        teachingPoints: [
+          '注意力臂必须是到支点的垂直距离，而不是沿杆子的长度。',
+          '若存在多个力，记得分别计算并求和，才能判断转向。'
+        ],
+        sliders: [
+          { id: 'leftForce', label: '左侧力 F₁ (N)', min: 1, max: 10, step: 0.5, value: 4, unit: 'N' },
+          { id: 'leftArm', label: '左力臂 L₁ (m)', min: 1, max: 5, step: 0.5, value: 3, unit: 'm' }
+        ],
+        getDetails: (p) => `右侧平衡力 F₂ = ${(p.leftForce * p.leftArm / 3).toFixed(2)} N (L₂=3m)`,
+        practice: {
+          prompt: '让右侧需要的平衡力接近 5 N',
+          unit: 'N',
+          targets: [5],
+          tolerance: 0.1,
+          getCurrent: (p) => p.leftForce * p.leftArm / 3
+        },
+        draw: drawLever
+      },
+      {
+        id: 'pressure',
+        name: '液体压强（帕斯卡定律）',
+        category: '流体与压强',
+        formula: 'P = ρ \\times g \\times h',
+        formulaDetail: '液体压强只与液体密度、重力加速度及深度有关，容器形状再复杂也遵循同样的垂直传递规律。',
+        summary: '帕斯卡定律揭示“压力在液体中向各方向等效传递”。它解释了注射器、省力液压机的放大原理，也是潜水和大坝设计需要重点关注的安全指标。',
+        teachingPoints: [
+          '压强与深度成正比，因此潜水越深所受压强越大。',
+          '若液面受到额外压力（如活塞），整个流体都会同步增加同样的压强。'
+        ],
+        formulaSteps: [
+          '① 把密度写成 kg/m³、深度写成 m；',
+          '② 套用 P = ρ g h，必要时加上额外外压；',
+          '③ 可换算为 kPa 方便与大气压比较。'
+        ],
+        sliders: [
+          { id: 'density', label: '液体密度 ρ (g/cm³)', min: 0.8, max: 1.3, step: 0.05, value: 1.0, unit: 'g/cm³' },
+          { id: 'depth', label: '深度 h (m)', min: 0.5, max: 15, step: 0.5, value: 6, unit: 'm' }
+        ],
+        getDetails: (p) => {
+          const pressure = p.density * 1000 * g * p.depth;
+          return `底部压强≈${(pressure / 1000).toFixed(1)} kPa`;
+        },
+        practice: {
+          prompt: '通过调节 ρ 与 h，让底部压强≈120 kPa',
+          unit: 'Pa',
+          targets: [120000],
+          tolerance: 6000,
+          targetLabel: '≈120 kPa',
+          getCurrent: (p) => p.density * 1000 * g * p.depth,
+          format: (val) => `${(val / 1000).toFixed(1)} kPa`
+        },
+        draw: drawPressure
+      },
+      {
+        id: 'reflection',
+        name: '光的反射定律',
+        category: '光学',
+        formula: '∠i = ∠r',
+        formulaDetail: '入射角与反射角是以法线为基准的夹角；镜面光滑时几何关系最明显，粗糙表面会产生漫反射。',
+        summary: '反射定律是镜子、潜望镜的数学基础。只要掌握“法线”这个参照，就能像调节台灯一样预测光线的去向。',
+        teachingPoints: [
+          '构造法线，让角度测量更直观。',
+          '光路可逆：反射光折返后会沿原路回到光源。'
+        ],
+        sliders: [
+          { id: 'angle', label: '入射角 θi (°)', min: 0, max: 80, step: 1, value: 35, unit: '°' }
+        ],
+        getDetails: (p) => `入射角 = 反射角 = ${p.angle.toFixed(0)}°`,
+        practice: {
+          prompt: '把入射角调到 45° 体验等角反射',
+          unit: '°',
+          targets: [45],
+          tolerance: 1,
+          getCurrent: (p) => p.angle
+        },
+        draw: drawReflection
+      },
+      {
+        id: 'refraction',
+        name: '光的折射定律',
+        category: '光学',
+        formula: 'n₁ sinθ₁ = n₂ sinθ₂',
+        formulaDetail: '根据介质折射率求出折射角：θ₂ = arcsin((n₁ / n₂) sinθ₁)。当入射角过大时可能出现全反射。',
+        summary: '折射说明光速在不同介质中不同，是透镜成像、彩虹和筷子“折断”错觉的原因。掌握正弦关系能让你预判光线弯折程度。',
+        teachingPoints: [
+          '画法线并标注折射角，避免把角度画错边。',
+          '判断光线是否“向法线靠拢”取决于速度是否变慢。'
+        ],
+        sliders: [
+          { id: 'angle', label: '入射角 θ₁ (°)', min: 0, max: 80, step: 1, value: 30, unit: '°' }
+        ],
+        getDetails: (p) => {
+          const theta2 = Math.asin(clamp((n1 / n2) * Math.sin(toRad(p.angle)), -0.999, 0.999));
+          return `折射角 θ₂ ≈ ${(theta2 * 180 / Math.PI).toFixed(1)}°`;
+        },
+        practice: {
+          prompt: '寻找折射角 22° 左右所需的入射角',
+          unit: '°',
+          targets: [22],
+          tolerance: 1,
+          getCurrent: (p) => (Math.asin(clamp((n1 / n2) * Math.sin(toRad(p.angle)), -0.999, 0.999)) * 180 / Math.PI)
+        },
+        draw: drawRefraction
+      },
+      {
+        id: 'ohm',
+        name: '欧姆定律',
+        category: '电学',
+        formula: 'U = I \\times R',
+        formulaDetail: '只要知道其中任意两个量即可推得第三个量。注意单位：1V/1Ω = 1A。',
+        summary: '欧姆定律让电路分析从“猜测”变成“计算”。无论是灯泡还是电热棒，它们电阻越大电流越小，热量释放也能据此评估。',
+        teachingPoints: [
+          '串并联电路可先化简总电阻，再应用欧姆定律。',
+          '实验中保持导线接触良好，电流表应串联。'
+        ],
+        formulaSteps: [
+          'Ⅰ. 如果未知 R，先化简求出等效电阻。',
+          'Ⅱ. 根据需要求 I 或 U：I = U/R 或 U = I·R。',
+          'Ⅲ. 核对量纲：1V/1Ω = 1A。'
+        ],
+        sliders: [
+          { id: 'voltage', label: '电压 U (V)', min: 1, max: 12, step: 1, value: 6, unit: 'V' },
+          { id: 'resistance', label: '电阻 R (Ω)', min: 1, max: 100, step: 1, value: 20, unit: 'Ω' }
+        ],
+        getDetails: (p) => `电流 I = ${(p.voltage / p.resistance).toFixed(2)} A`,
+        practice: {
+          prompt: '调节 U 或 R，让电流达到 0.40 A',
+          unit: 'A',
+          targets: [0.4],
+          tolerance: 0.03,
+          getCurrent: (p) => p.voltage / p.resistance
+        },
+        draw: drawOhm
+      },
+      {
+        id: 'series',
+        name: '简单串联电路',
+        category: '电学',
+        formula: 'R_{总} = R_{1} + R_{2} + \\cdots',
+        formulaDetail: '串联元件相同电流，等效电阻直接相加；路上任一点的电压降与电阻成正比。',
+        summary: '串联电路像排队过独木桥——电流大小一致。通过等效化简，可以迅速算出灯泡亮度和安全电压。',
+        teachingPoints: [
+          '求电流时先计算总电阻，再代入 I = U / R总。',
+          '若想知道某段电压，可按分压关系 U段 = I × R段。'
+        ],
+        sliders: [
+          { id: 'r1', label: '电阻 R₁ (Ω)', min: 1, max: 60, step: 1, value: 15, unit: 'Ω' },
+          { id: 'r2', label: '电阻 R₂ (Ω)', min: 1, max: 60, step: 1, value: 30, unit: 'Ω' },
+          { id: 'voltage', label: '电压 U (V)', min: 1, max: 12, step: 1, value: 5, unit: 'V' }
+        ],
+        getDetails: (p) => {
+          const total = p.r1 + p.r2;
+          const current = p.voltage / total;
+          return `总电阻=${total.toFixed(1)}Ω，电流=${current.toFixed(2)}A`;
+        },
+        practice: {
+          prompt: '让总电阻等于 70 Ω，观察电流变化',
+          unit: 'Ω',
+          targets: [70],
+          tolerance: 1,
+          getCurrent: (p) => p.r1 + p.r2
+        },
+        draw: drawSeries
+      },
+      {
+        id: 'coulomb',
+        name: '库仑定律',
+        category: '静电学',
+        formula: 'F = k \\times \\frac{|q_{1} q_{2}|}{r^{2}}',
+        formulaDetail: '把电荷换算成库仑 (μC → ×10⁻⁶C)，距离用米，代入常数 k=8.99×10⁹ N·m²/C²，可得静电力大小。正负号决定吸引或排斥。',
+        summary: '库仑定律是静电学的“牛顿引力定律”。它告诉我们：两个带电体越近、带电量越大，作用力越显著。学校里的“验电器”就是利用这个原理观察排斥。',
+        teachingPoints: [
+          '电荷量的符号影响力的方向，大小取绝对值。',
+          '常把微库仑换算成库仑再进行计算，避免数量级错误。'
+        ],
+        formulaSteps: [
+          '① 将 μC 转换成 C（×10⁻⁶）。',
+          '② 量出 r（米），代入 F = k|q₁q₂|/r²。',
+          '③ 判断符号：同号排斥、异号相吸。'
+        ],
+        sliders: [
+          { id: 'q1', label: '电荷 q₁ (μC)', min: -5, max: 5, step: 0.5, value: 3, unit: 'μC' },
+          { id: 'q2', label: '电荷 q₂ (μC)', min: -5, max: 5, step: 0.5, value: -2, unit: 'μC' },
+          { id: 'distance', label: '间距 r (m)', min: 0.3, max: 1.5, step: 0.1, value: 0.8, unit: 'm' }
+        ],
+        getDetails: (p) => {
+          const force = kElectro * Math.abs(p.q1 * 1e-6 * p.q2 * 1e-6) / Math.pow(p.distance, 2);
+          return `静电力≈${force.toFixed(3)} N (${p.q1 * p.q2 >= 0 ? '排斥' : '吸引'})`;
+        },
+        practice: {
+          prompt: '配对 q₁, q₂, r，让静电力接近 0.20 N',
+          unit: 'N',
+          targets: [0.2],
+          tolerance: 0.02,
+          getCurrent: (p) => kElectro * Math.abs(p.q1 * 1e-6 * p.q2 * 1e-6) / Math.pow(p.distance, 2),
+          format: (val) => `${val.toFixed(2)}N`
+        },
+        draw: drawCoulomb
+      },
+      {
+        id: 'energy',
+        name: '重力势能',
+        category: '力学',
+        formula: 'E_{p} = m \\times g \\times h',
+        formulaDetail: '先确定参考零势能位置，再把质量、重力加速度和高度相乘即可得到储能大小。',
+        summary: '势能体现“所处位置蕴含的能量”。储存的势能越多，释放时越能做功。例如水库、水塔以及跳水运动都离不开这一公式。',
+        teachingPoints: [
+          '高度一定要以同一个参考平面为基准。',
+          '若题目给出势能变化，可直接代入 ΔEp = m g Δh。'
+        ],
+        sliders: [
+          { id: 'mass', label: '质量 m (kg)', min: 1, max: 5, step: 0.5, value: 2.5, unit: 'kg' },
+          { id: 'height', label: '高度 h (m)', min: 1, max: 10, step: 0.5, value: 6, unit: 'm' }
+        ],
+        getDetails: (p) => `Ep = ${(p.mass * g * p.height).toFixed(1)} J`,
+        practice: {
+          prompt: '调整 m、h 让重力势能约等于 150 J',
+          unit: 'J',
+          targets: [150],
+          tolerance: 5,
+          getCurrent: (p) => p.mass * g * p.height
+        },
+        draw: drawEnergy
+      },
+      {
+        id: 'momentum',
+        name: '动量守恒',
+        category: '力学',
+        formula: 'm_{1} v_{1} + m_{2} v_{2} = 常量',
+        formulaDetail: '在无外力或外力可忽略时，碰撞前后的动量矢量和相同；把方向用正负号表示即可套用。',
+        summary: '动量守恒让碰撞分析更简单：不用思考力的细节，只需关注“碰前=碰后”。这也是火箭喷气推进和冰上推人的原因。',
+        teachingPoints: [
+          '一维问题用正负号表示方向即可。',
+          '若碰撞完全弹性，还可以额外列能量守恒求速度。'
+        ],
+        sliders: [
+          { id: 'mass1', label: '小车 A 质量 (kg)', min: 1, max: 5, step: 0.5, value: 2, unit: 'kg' },
+          { id: 'mass2', label: '小车 B 质量 (kg)', min: 1, max: 5, step: 0.5, value: 3, unit: 'kg' },
+          { id: 'v1', label: 'A 初速度 (m/s)', min: 1, max: 15, step: 1, value: 8, unit: 'm/s' }
+        ],
+        getDetails: (p) => {
+          const v1p = ((p.mass1 - p.mass2) / (p.mass1 + p.mass2)) * p.v1;
+          const v2p = (2 * p.mass1 / (p.mass1 + p.mass2)) * p.v1;
+          return `碰后 v₁′≈${v1p.toFixed(2)}m/s, v₂′≈${v2p.toFixed(2)}m/s`;
+        },
+        practice: {
+          prompt: '把两车质量调成近似相等，体验速度“交换”',
+          unit: 'kg',
+          targets: [0],
+          tolerance: 0.1,
+          type: 'difference',
+          targetLabel: 'm₁ - m₂ → 0',
+          getCurrent: (p) => p.mass1 - p.mass2,
+          format: (val) => `${val.toFixed(2)}kg`
+        },
+        draw: drawMomentum
+      },
+      {
+        id: 'circular',
+        name: '匀速圆周运动',
+        category: '力学',
+        formula: 'a_{c} = \\frac{v^{2}}{r}',
+        formulaDetail: '速度大小不变但方向变化，需要向心加速度；可由 v²/r 或 ω²r 获得。',
+        summary: '无论是转弯的汽车还是卫星，想要保持圆形轨道都离不开向心力。这个模型也解释了旋转游乐设施为何越靠外感觉越“重”。',
+        teachingPoints: [
+          '向心力并非“额外的力”，而是提供圆周运动所需合力。',
+          '半径越小、速度越大，向心加速度越明显。'
+        ],
+        sliders: [
+          { id: 'speed', label: '线速度 v (m/s)', min: 1, max: 20, step: 1, value: 8, unit: 'm/s' },
+          { id: 'radius', label: '半径 r (m)', min: 1, max: 10, step: 0.5, value: 4, unit: 'm' }
+        ],
+        getDetails: (p) => `aₐ = ${(p.speed * p.speed / p.radius).toFixed(2)} m/s²`,
+        practice: {
+          prompt: '让向心加速度接近 10 m/s²',
+          unit: 'm/s²',
+          targets: [10],
+          tolerance: 0.5,
+          getCurrent: (p) => p.speed * p.speed / p.radius
+        },
+        draw: drawCircular
+      },
+      {
+        id: 'projectile',
+        name: '斜抛运动',
+        category: '力学',
+        formula: 'R = \\frac{v^{2} \\sin 2θ}{g}',
+        formulaDetail: '把初速度分解为水平与竖直分量，水平匀速、竖直做自由落体；射程与 sin2θ 有关，θ=45°时最远。',
+        summary: '只需一次分解，就能预测炮弹、投篮或抛水球的轨迹。了解飞行时间和最大高度后，在竞赛题里也能更快判断相遇和落点。',
+        teachingPoints: [
+          '注意角度要换算成弧度后再代入三角函数。',
+          '同一高度发射和落地时，可直接使用射程公式。'
+        ],
+        sliders: [
+          { id: 'speed', label: '初速度 v (m/s)', min: 5, max: 25, step: 1, value: 15, unit: 'm/s' },
+          { id: 'angle', label: '发射角 θ (°)', min: 10, max: 80, step: 1, value: 40, unit: '°' }
+        ],
+        getDetails: (p) => {
+          const angle = toRad(p.angle);
+          const range = (p.speed * p.speed * Math.sin(2 * angle)) / g;
+          return `射程≈${range.toFixed(1)} m`;
+        },
+        practice: {
+          prompt: '尝试让射程达到 20 m',
+          unit: 'm',
+          targets: [20],
+          tolerance: 1.5,
+          getCurrent: (p) => (p.speed * p.speed * Math.sin(2 * toRad(p.angle))) / g
+        },
+        draw: drawProjectile
+      },
+      {
+        id: 'harmonic',
+        name: '简谐振动（弹簧）',
+        category: '波动与声',
+        formula: 'x(t) = A \\sin(ω t + φ)',
+        formulaDetail: 'A 决定最大位移，ω = 2πf 决定快慢；弹簧振子满足 F = -kx，从而推得 ω = √(k/m)。',
+        summary: '简谐振动是“最简单的周期运动”。用它可以描述摆钟、吉他弦甚至交流电，只要掌握振幅和频率即可理解能量的来回交换。',
+        teachingPoints: [
+          '位移、速度、加速度之间相差 90° 相位。',
+          '能量在动能与势能之间周期转换。'
+        ],
+        sliders: [
+          { id: 'amplitude', label: '振幅 A (px)', min: 20, max: 80, step: 5, value: 40, unit: 'px' },
+          { id: 'frequency', label: '频率 f (Hz)', min: 0.5, max: 2, step: 0.1, value: 1.2, unit: 'Hz' }
+        ],
+        getDetails: (p) => `ω = ${(2 * Math.PI * p.frequency).toFixed(2)} rad/s`,
+        practice: {
+          prompt: '把振幅设为 60 px，体验能量变化',
+          unit: 'px',
+          targets: [60],
+          tolerance: 1,
+          getCurrent: (p) => p.amplitude
+        },
+        draw: drawHarmonic
+      },
+      {
+        id: 'wave',
+        name: '波的叠加',
+        category: '波动与声',
+        formula: 'y = y_{1} + y_{2}',
+        formulaDetail: '同一介质中，多列波的位移可直接相加；若频率或相位不同，会形成干涉条纹或拍频。',
+        summary: '波的叠加让我们理解噪声抵消耳机、激光干涉仪的工作方式。学会分析相对相位后，复杂的波形也能分解成简单正弦。',
+        teachingPoints: [
+          '同相位叠加最强，反相位会抵消。',
+          '拍频 f拍 = |f₁ - f₂|，可用来调音。'
+        ],
+        sliders: [
+          { id: 'frequency', label: '频率 f (Hz)', min: 1, max: 5, step: 0.2, value: 2.4, unit: 'Hz' },
+          { id: 'amplitude', label: '振幅 A (px)', min: 10, max: 60, step: 5, value: 35, unit: 'px' }
+        ],
+        getDetails: (p) => `最大叠加振幅≈${(p.amplitude * 1.8).toFixed(1)} px`,
+        practice: {
+          prompt: '让两列波频率=3 Hz，观察稳定花纹',
+          unit: 'Hz',
+          targets: [3],
+          tolerance: 0.1,
+          getCurrent: (p) => p.frequency
+        },
+        draw: drawWave
+      },
+      {
+        id: 'doppler',
+        name: '多普勒效应',
+        category: '波动与声',
+        formula: 'f\' = f \\times \\frac{v}{(v \\pm v_{s})}',
+        formulaDetail: '声源靠近听者时分母 v - vₛ，频率变高；远离时分母 v + vₛ，频率变低。',
+        summary: '救护车呼啸而过的音调变化就是多普勒效应。它不仅用于声学，也帮助天文学家测量星系远离速度。',
+        teachingPoints: [
+          '区分“声源运动”与“观察者运动”的公式。',
+          '光的多普勒会引起“红移/蓝移”，概念一致。'
+        ],
+        sliders: [
+          { id: 'sourceSpeed', label: '声源速度 vₛ (m/s)', min: 0, max: 60, step: 5, value: 20, unit: 'm/s' },
+          { id: 'frequency', label: '原频率 f (Hz)', min: 220, max: 660, step: 20, value: 440, unit: 'Hz' }
+        ],
+        getDetails: (p) => {
+          const c = 340;
+          const front = p.frequency * (c / (c - p.sourceSpeed));
+          const back = p.frequency * (c / (c + p.sourceSpeed));
+          return `前方≈${front.toFixed(0)}Hz，后方≈${back.toFixed(0)}Hz`;
+        },
+        practice: {
+          prompt: '将声源速度调到 30 m/s，感受频率增幅',
+          unit: 'm/s',
+          targets: [30],
+          tolerance: 2,
+          getCurrent: (p) => p.sourceSpeed
+        },
+        draw: drawDoppler
+      },
+      {
+        id: 'thermal',
+        name: '热胀冷缩',
+        category: '热学',
+        formula: '\\Delta L = \\alpha \\times L_{0} \\times \\Delta T',
+        formulaDetail: '线膨胀系数 α 描述单位长度的伸长率，记得把 ΔT 换成摄氏度或开尔文。',
+        summary: '桥梁接缝、铁轨缝隙都与热胀冷缩有关。只要温度升高，固体就会延伸；热胀的量随材质和温差线性增长。',
+        teachingPoints: [
+          '计算时要将毫米与米统一到同一单位。',
+          '若材料复合，可分别计算再求和。'
+        ],
+        sliders: [
+          { id: 'deltaT', label: '温差 ΔT (°C)', min: 0, max: 80, step: 5, value: 30, unit: '°C' },
+          { id: 'alpha', label: '线膨胀系数 α (×10⁻⁶/°C)', min: 5, max: 25, step: 1, value: 12, unit: '×10⁻⁶' }
+        ],
+        getDetails: (p) => `ΔL(1m)≈${(p.alpha * 1e-6 * p.deltaT * 1000).toFixed(2)} mm`,
+        practice: {
+          prompt: '调节 α 与 ΔT 令 ΔL ≈ 1.2 mm',
+          unit: 'mm',
+          targets: [1.2],
+          tolerance: 0.1,
+          getCurrent: (p) => p.alpha * 1e-6 * p.deltaT * 1000
+        },
+        draw: drawThermal
+      },
+      {
+        id: 'energyFlow',
+        name: '热对流能量流',
+        category: '热学',
+        formula: 'Q \\propto \\Delta T',
+        formulaDetail: '温差越大，热对流越剧烈；实际计算需考虑面积、流速等因素，这里用波形高度代表热流强度。',
+        summary: '在湖面或暖气片旁，你能感到空气缓慢流动。热对流将热能从高温区搬到低温区，是天气与海洋环流的重要驱动力。',
+        teachingPoints: [
+          '加热底部、上冷下热更容易形成对流。',
+          '温差变小或密闭空间对流会被抑制。'
+        ],
+        sliders: [
+          { id: 'tempDiff', label: '温差 ΔT (°C)', min: 5, max: 30, step: 1, value: 12, unit: '°C' }
+        ],
+        getDetails: (p) => `振幅代表热流强度，ΔT=${p.tempDiff.toFixed(0)}°C`,
+        practice: {
+          prompt: '把温差设为 20°C，观察热流加剧',
+          unit: '°C',
+          targets: [20],
+          tolerance: 1,
+          getCurrent: (p) => p.tempDiff
+        },
+        draw: drawEnergyFlow
+      },
+      {
+        id: 'magnetic',
+        name: '洛伦兹力（带电粒子）',
+        category: '电磁与现代物理',
+        formula: 'F = q \\times v \\times B \\times \\sin θ',
+        formulaDetail: '当速度与磁场垂直时，洛伦兹力大小最大，方向可用左手定则判断，提供向心力让粒子弯曲。',
+        summary: '磁场会让带电粒子转弯，这是回旋加速器、显像管偏转的基础。只要记住速度越快、磁场越强，轨迹越紧。',
+        teachingPoints: [
+          '若速度与磁场平行，洛伦兹力为零。',
+          '圆轨道半径 r = m v / (|q| B)，质量越大越难弯。'
+        ],
+        sliders: [
+          { id: 'velocity', label: '速度 v (m/s)', min: 1, max: 20, step: 1, value: 8, unit: 'm/s' },
+          { id: 'magneticField', label: '磁感应强度 B (T)', min: 0.1, max: 1, step: 0.1, value: 0.5, unit: 'T' }
+        ],
+        getDetails: (p) => `F = ${(p.velocity * p.magneticField).toFixed(2)} N (取 q=1C, θ=90°)`,
+        practice: {
+          prompt: '让洛伦兹力达到 6 N，观察轨迹收紧',
+          unit: 'N',
+          targets: [6],
+          tolerance: 0.3,
+          getCurrent: (p) => p.velocity * p.magneticField
+        },
+        draw: drawMagnetic
+      },
+      {
+        id: 'induction',
+        name: '电磁感应（法拉第）',
+        category: '电磁与现代物理',
+        formula: '|\\varepsilon| = N \\times \\frac{\\Delta Φ}{\\Delta t}',
+        formulaDetail: '线圈内磁通量变化越快，感应电动势越大。ΔΦ 可近似看成 B·A，若磁体移动更快或匝数更多，感应电压随之增加。',
+        summary: '发电机、磁悬浮列车都依赖电磁感应：动能→电能的关键就是“磁通变化”。本示意用磁铁穿过线圈来展示电压脉冲的大小。',
+        teachingPoints: [
+          '只有磁通量变化时才产生感应电动势。',
+          '楞次定律说明感应电流方向总是阻碍原变化。'
+        ],
+        formulaSteps: [
+          '1. 先求磁通量 Φ = B·A·cosθ 或其变化量 ΔΦ；',
+          '2. 感应电动势大小 |ε| = N · ΔΦ / Δt；',
+          '3. 用楞次定律判定方向（本示意用色块提示方向）。'
+        ],
+        sliders: [
+          { id: 'speed', label: '磁体移动速度 (m/s)', min: 0.2, max: 2, step: 0.1, value: 0.8, unit: 'm/s' },
+          { id: 'turns', label: '线圈匝数 N', min: 20, max: 150, step: 5, value: 60, unit: '匝' }
+        ],
+        getDetails: (p) => `感应电动势≈${(p.turns * p.speed * 0.04).toFixed(2)} V (示意)`,
+        practice: {
+          prompt: '调节速度与匝数，让感应电压≈4 V',
+          unit: 'V',
+          targets: [4],
+          tolerance: 0.3,
+          getCurrent: (p) => p.turns * p.speed * 0.04,
+          format: (val) => `${val.toFixed(2)}V`
+        },
+        draw: drawInduction
+      }
+    ];
+
+    const learningNodes = [
+      { id: 'path-mech', label: '力学基础', principles: ['newton', 'lever', 'circular', 'projectile'] },
+      { id: 'path-fluid', label: '流体与压强', principles: ['buoyancy', 'pressure'] },
+      { id: 'path-energy', label: '能量与功', principles: ['energy', 'energyFlow'] },
+      { id: 'path-wave', label: '振动与波', principles: ['harmonic', 'wave', 'doppler'] },
+      { id: 'path-optics', label: '几何光学', principles: ['reflection', 'refraction'] },
+      { id: 'path-electric', label: '电路入门', principles: ['ohm', 'series'] },
+      { id: 'path-charge', label: '静电与场', principles: ['coulomb'] },
+      { id: 'path-magnet', label: '电磁感应', principles: ['magnetic', 'induction'] }
+    ];
+
+    const categoryOrder = ['力学', '流体与压强', '光学', '电学', '静电学', '波动与声', '热学', '电磁与现代物理'];
+
+    const canvas = document.getElementById('principleCanvas');
+    const ctx = canvas.getContext('2d');
+    const outlineContainer = document.getElementById('outlineContainer');
+    const sliderContainer = document.getElementById('sliderControls');
+    const titleEl = document.getElementById('visualTitle');
+    const badgeEl = document.getElementById('visualBadge');
+    const summaryText = document.getElementById('summaryText');
+    const formulaText = document.getElementById('formulaText');
+    const randomBtn = document.getElementById('randomBtn');
+    const pathContainer = document.getElementById('learningPath');
+    const practicePrompt = document.getElementById('practicePrompt');
+    const practiceStatus = document.getElementById('practiceStatus');
+    const practiceValue = document.getElementById('practiceValue');
+    const practiceRing = document.getElementById('practiceRing');
+    const practiceReset = document.getElementById('practiceReset');
+    const practiceExplain = document.getElementById('practiceExplain');
+
+    let currentPrinciple = null;
+    let currentParams = {};
+    let animationTime = 0;
+    const practiceTargets = {};
+
+    function renderOutline() {
+      outlineContainer.innerHTML = '';
+      const grouped = {};
+      principles.forEach((p) => {
+        if (!grouped[p.category]) grouped[p.category] = [];
+        grouped[p.category].push(p);
+      });
+      categoryOrder.forEach((cat) => {
+        if (!grouped[cat]) return;
+        const groupEl = document.createElement('div');
+        groupEl.className = 'outline-group';
+        const header = document.createElement('button');
+        header.className = 'outline-group-header';
+        header.innerHTML = `<span><i class="fa-solid fa-caret-down"></i>${cat}</span><i class="fa-solid fa-angles-down"></i>`;
+        header.addEventListener('click', () => groupEl.classList.toggle('collapsed'));
+        const list = document.createElement('div');
+        list.className = 'outline-items';
+        grouped[cat].forEach((principle) => {
+          const item = document.createElement('button');
+          item.className = 'outline-item';
+          item.textContent = principle.name;
+          item.dataset.id = principle.id;
+          item.addEventListener('click', () => setActivePrinciple(principle.id));
+          list.appendChild(item);
+        });
+        groupEl.appendChild(header);
+        groupEl.appendChild(list);
+        outlineContainer.appendChild(groupEl);
+      });
+    }
+
+    function renderLearningPath() {
+      pathContainer.innerHTML = '';
+      learningNodes.forEach((node, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'path-node';
+        btn.dataset.nodeId = node.id;
+        btn.textContent = node.label;
+        btn.addEventListener('click', () => {
+          if (node.principles.length) setActivePrinciple(node.principles[0]);
+        });
+        pathContainer.appendChild(btn);
+        if (index < learningNodes.length - 1) {
+          const arrow = document.createElement('i');
+          arrow.className = 'fa-solid fa-arrow-right path-arrow';
+          pathContainer.appendChild(arrow);
+        }
+      });
+    }
+
+    function highlightOutline(id) {
+      document.querySelectorAll('.outline-item').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.id === id);
+      });
+    }
+
+    function highlightPath(id) {
+      learningNodes.forEach((node) => {
+        const btn = document.querySelector(`[data-node-id="${node.id}"]`);
+        if (!btn) return;
+        btn.classList.toggle('active', node.principles.includes(id));
+      });
+    }
+
+    function formatSliderValue(slider, value) {
+      const decimals = slider.step && slider.step < 1 ? 2 : 0;
+      return `${value.toFixed(decimals)} ${slider.unit || ''}`.trim();
+    }
+
+    function renderSliders(principle) {
+      sliderContainer.innerHTML = '';
+      principle.sliders.forEach((slider) => {
+        const wrapper = document.createElement('label');
+        wrapper.className = 'slider-control';
+        const title = document.createElement('span');
+        title.textContent = slider.label;
+        const input = document.createElement('input');
+        input.type = 'range';
+        input.min = slider.min;
+        input.max = slider.max;
+        input.step = slider.step || 1;
+        input.value = slider.value;
+        const numberInput = document.createElement('input');
+        numberInput.type = 'number';
+        numberInput.min = slider.min;
+        numberInput.max = slider.max;
+        numberInput.step = slider.step || 1;
+        numberInput.value = slider.value;
+        const valueEl = document.createElement('div');
+        valueEl.className = 'slider-value';
+        currentParams[slider.id] = Number(slider.value);
+        valueEl.textContent = formatSliderValue(slider, Number(slider.value));
+        const syncValue = (val) => {
+          currentParams[slider.id] = val;
+          valueEl.textContent = formatSliderValue(slider, val);
+          numberInput.value = val;
+          input.value = val;
+          updateInfo();
+        };
+        input.addEventListener('input', (e) => {
+          syncValue(parseFloat(e.target.value));
+        });
+        numberInput.addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value);
+          if (isNaN(val)) return;
+          syncValue(clamp(val, slider.min, slider.max));
+        });
+        const row = document.createElement('div');
+        row.className = 'slider-input-row';
+        row.appendChild(input);
+        row.appendChild(numberInput);
+        wrapper.appendChild(title);
+        wrapper.appendChild(row);
+        wrapper.appendChild(valueEl);
+        sliderContainer.appendChild(wrapper);
+      });
+      updateInfo();
+    }
+
+    function ensurePracticeTarget(principle) {
+      if (!principle.practice) return null;
+      if (!practiceTargets[principle.id]) {
+        const targets = principle.practice.targets;
+        const target = targets[Math.floor(Math.random() * targets.length)];
+        practiceTargets[principle.id] = target;
+      }
+      return practiceTargets[principle.id];
+    }
+
+    function rerollPracticeTarget() {
+      if (!currentPrinciple || !currentPrinciple.practice) return;
+      const targets = currentPrinciple.practice.targets;
+      practiceTargets[currentPrinciple.id] = targets[Math.floor(Math.random() * targets.length)];
+      updatePractice();
+    }
+
+    function explainPractice() {
+      if (!currentPrinciple) return;
+      const tips = currentPrinciple.teachingPoints || [];
+      const lines = tips.length ? tips.map((t, i) => `${i + 1}. ${t}`).join('\n') : currentPrinciple.summary;
+      alert(`教学提示\n————————\n${lines}`);
+    }
+
+    function updatePractice() {
+      if (!currentPrinciple || !currentPrinciple.practice) return;
+      const practice = currentPrinciple.practice;
+      const target = ensurePracticeTarget(currentPrinciple);
+      const current = practice.getCurrent(currentParams);
+      const tolerance = practice.tolerance;
+      let diff;
+      if (practice.type === 'difference') {
+        diff = Math.abs(current);
+      } else {
+        diff = Math.abs(current - target);
+      }
+      const progressBase = practice.type === 'difference'
+        ? Math.max(tolerance * 3, 1)
+        : Math.max(Math.abs(target), tolerance * 4);
+      const ratio = clamp(1 - diff / progressBase, 0, 1);
+      const circumference = 2 * Math.PI * 34;
+      practiceRing.style.strokeDasharray = circumference;
+      practiceRing.style.strokeDashoffset = circumference * (1 - ratio);
+      practiceValue.textContent = `${Math.round(ratio * 100)}%`;
+      const formattedCurrent = practice.format ? practice.format(current) : `${current.toFixed(2)} ${practice.unit || ''}`.trim();
+      const formattedDiff = practice.unit ? `${diff.toFixed(2)} ${practice.unit}` : diff.toFixed(2);
+      const targetDisplay = practice.type === 'difference'
+        ? (practice.targetLabel || `≈0 ${practice.unit || ''}`.trim())
+        : `${practice.format ? practice.format(target) : `${target} ${practice.unit || ''}`.trim()}`;
+      practicePrompt.textContent = `${practice.prompt} (目标：${targetDisplay})`;
+      const success = diff <= tolerance;
+      if (success) {
+        practiceStatus.textContent = `完成！当前 ${formattedCurrent} 已满足目标要求，继续挑战新的目标吧。`;
+        practiceStatus.style.color = '#2da44e';
+      } else {
+        practiceStatus.textContent = `当前：${formattedCurrent}，与目标差≈${formattedDiff}，继续微调滑块。`;
+        practiceStatus.style.color = '#56618a';
+      }
+    }
+
+    function updateInfo() {
+      if (!currentPrinciple) return;
+      const detail = currentPrinciple.getDetails ? currentPrinciple.getDetails(currentParams) : '';
+      const teachList = currentPrinciple.teachingPoints && currentPrinciple.teachingPoints.length
+        ? `<ul class="teach-list">${currentPrinciple.teachingPoints.map((t) => `<li>${t}</li>`).join('')}</ul>`
+        : '';
+      const detailHtml = detail ? `<span class="detail-extra">${detail}</span>` : '';
+      summaryText.innerHTML = `<p class="summary-main">${currentPrinciple.summary}</p>${teachList}${detailHtml}`;
+      const formulaDetail = currentPrinciple.formulaDetail || '';
+      const formulaSteps = currentPrinciple.formulaSteps && currentPrinciple.formulaSteps.length
+        ? `<ul class="formula-extras">${currentPrinciple.formulaSteps.map((step) => `<li>${step}</li>`).join('')}</ul>`
+        : '';
+      formulaText.innerHTML = `<div class="formula-main math-text">${formatFormula(currentPrinciple.formula)}</div><p class="formula-detail">${formulaDetail}</p>${formulaSteps}`;
+      updatePractice();
+    }
+
+    function setActivePrinciple(id) {
+      const principle = principles.find((p) => p.id === id);
+      if (!principle) return;
+      currentPrinciple = principle;
+      currentParams = {};
+      titleEl.textContent = principle.name;
+      badgeEl.innerHTML = `<i class="fa-solid fa-layer-group"></i> ${principle.category}`;
+      renderSliders(principle);
+      highlightOutline(id);
+      highlightPath(id);
+      updateCanvas();
+    }
+
+    function updateCanvas() {
+      if (!currentPrinciple) return;
+      const ratio = window.devicePixelRatio || 1;
+      const displayWidth = canvas.clientWidth;
+      const displayHeight = canvas.clientHeight;
+      if (canvas.width !== displayWidth * ratio || canvas.height !== displayHeight * ratio) {
+        canvas.width = displayWidth * ratio;
+        canvas.height = displayHeight * ratio;
+      }
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      ctx.clearRect(0, 0, displayWidth, displayHeight);
+      ctx.fillStyle = '#f3f9ff';
+      ctx.fillRect(0, 0, displayWidth, displayHeight);
+      const drawParams = Object.assign({}, currentParams, { time: animationTime / 1000 });
+      currentPrinciple.draw(ctx, displayWidth, displayHeight, drawParams);
+    }
+
+    function animate(time) {
+      animationTime = time;
+      updateCanvas();
+      requestAnimationFrame(animate);
+    }
+
+    randomBtn.addEventListener('click', () => {
+      randomBtn.classList.add('active');
+      setTimeout(() => randomBtn.classList.remove('active'), 400);
+      const pick = principles[Math.floor(Math.random() * principles.length)];
+      setActivePrinciple(pick.id);
+    });
+
+    practiceReset.addEventListener('click', rerollPracticeTarget);
+    practiceExplain.addEventListener('click', explainPractice);
+    window.addEventListener('resize', updateCanvas);
+
+    renderOutline();
+    renderLearningPath();
+    setActivePrinciple('newton');
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>
