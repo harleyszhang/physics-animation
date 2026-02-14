@@ -71,5 +71,9 @@
 优化点：
 - 公式显示要友好，要完美支持显示公式，同时要有物理知识的交互输入，牛顿第二定律调节拉力，对应的物体速度要变快。
 - 一个原则是物理知识的可视化动画展示必须和现实结合起来！！！基于这个原则，重构所有物理模块的动画。
-
 ```
+
+## 更好的网站
+
+https://phet.colorado.edu/en/simulations/filter?subjects=physics&type=html
+https://myphysicslab.com/engine2D/car-suspension-en.html
