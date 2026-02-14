@@ -395,6 +395,35 @@
       color: var(--accent);
       font-size: 13px;
     }
+    .slider-ticks {
+      position: relative;
+      height: 18px;
+      margin-top: 2px;
+    }
+    .slider-tick {
+      position: absolute;
+      transform: translateX(-50%);
+      font-size: 10px;
+      color: #7a8aa6;
+      white-space: nowrap;
+    }
+    .formula-derivation .r1 { color: #c62828; font-weight: 600; }
+    .formula-derivation .r2 { color: #1565c0; font-weight: 600; }
+    .formula-derivation .u  { color: #2e7d32; font-weight: 600; }
+    .practice-progress-wrap { margin-top: 10px; }
+    .practice-progress-bar {
+      height: 8px;
+      border-radius: 4px;
+      background: rgba(0,0,0,0.08);
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+    .practice-progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.2s ease, background 0.2s ease;
+    }
+    .practice-progress-text { font-size: 12px; color: #5b6690; }
     .info-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -490,6 +519,15 @@
       display: flex;
       gap: 12px;
       align-items: center;
+    }
+    .practice-no-task {
+      padding: 20px 16px;
+      color: #5b6690;
+      font-size: 13px;
+      line-height: 1.6;
+      background: rgba(76,123,229,0.06);
+      border-radius: 12px;
+      border-left: 3px solid rgba(76,123,229,0.3);
     }
     .practice-indicator {
       width: 90px;
@@ -723,7 +761,7 @@
           </div>
           <div class="info-block" id="practiceBlock">
             <h3><i class="fa-solid fa-flask"></i> 可视化练习题</h3>
-            <div class="practice-block">
+            <div id="practiceHasTask" class="practice-block">
               <div class="practice-indicator">
                 <svg width="90" height="90">
                   <circle cx="45" cy="45" r="34" stroke="rgba(76,123,229,0.2)"></circle>
@@ -734,6 +772,10 @@
               <div>
                 <p id="practicePrompt">调整滑块完成目标。</p>
                 <p class="practice-status" id="practiceStatus">努力使当前结果接近目标值。</p>
+                <div id="practiceProgressWrap" class="practice-progress-wrap" style="display:none">
+                  <div class="practice-progress-bar"><div id="practiceProgressFill" class="practice-progress-fill"></div></div>
+                  <span id="practiceProgressText" class="practice-progress-text"></span>
+                </div>
                 <div class="practice-btns">
                   <button id="practiceReset"><i class="fa-solid fa-arrows-rotate"></i> 重新出题</button>
                   <button id="practiceExplain"><i class="fa-solid fa-circle-info"></i> 教学提示</button>
@@ -741,6 +783,7 @@
                 </div>
               </div>
             </div>
+            <div id="practiceNoTask" class="practice-no-task" style="display:none">本模块暂无可视化练习，请通过调节滑块探索规律。</div>
           </div>
         </div>
       </section>
@@ -4005,8 +4048,6 @@
 
     function drawParallel(ctx, w, h, params) {
       ctx.save();
-      ctx.fillStyle = '#f2f4f8';
-      ctx.fillRect(0, 0, w, h);
       const r1 = params.r1 || 20;
       const r2 = params.r2 || 30;
       const u = params.voltage || 6;
@@ -4015,45 +4056,178 @@
       const i1 = u / r1;
       const i2 = u / r2;
       const iTotal = i1 + i2;
+      const t = params.time || 0;
+      const centerY = h * 0.42;
+      const batX = 90;
+      const topY = centerY - 72;
+      const botY = centerY + 72;
+      const junctL = 200;
+      const junctR = 320;
+      const wireTop = topY;
+      const wireBot = botY;
 
-      const centerY = h * 0.5;
-      const batX = 80;
-      ctx.fillStyle = '#3d4f5f';
-      ctx.fillRect(batX - 15, centerY - 25, 30, 50);
-      ctx.strokeStyle = '#2d3142';
-      ctx.strokeRect(batX - 15, centerY - 25, 30, 50);
+      const bg = ctx.createLinearGradient(0, 0, 0, h);
+      bg.addColorStop(0, '#e8eef6');
+      bg.addColorStop(0.6, '#f0f4fa');
+      bg.addColorStop(1, '#dce2ec');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = 'rgba(220,230,245,0.5)';
+      ctx.setLineDash([8, 6]);
+      ctx.strokeStyle = 'rgba(76,123,229,0.2)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(20, 18, w - 40, h - 95);
+      ctx.setLineDash([]);
+
+      const resistToColor = (r) => {
+        const t0 = clamp((r - 10) / 40, 0, 1);
+        const red = Math.round(230 - t0 * 120);
+        const green = Math.round(180 - t0 * 150);
+        const blue = Math.round(200 - t0 * 80);
+        return `rgb(${red},${green},${blue})`;
+      };
+      ctx.fillStyle = '#2d3548';
+      ctx.fillRect(batX - 18, centerY - 28, 36, 56);
+      ctx.strokeStyle = '#1a1f2e';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(batX - 18, centerY - 28, 36, 56);
+      ctx.fillStyle = '#4c7be5';
+      ctx.font = 'bold 12px Poppins, sans-serif';
+      ctx.fillText(`${u} V`, batX - 14, centerY + 4);
       ctx.fillStyle = '#1f2a44';
-      ctx.font = '12px Poppins, sans-serif';
-      ctx.fillText(`${u}V`, batX - 12, centerY + 4);
-      const topY = centerY - 70;
-      const botY = centerY + 70;
-      ctx.strokeStyle = '#2d3142';
-      ctx.lineWidth = 3;
+      ctx.font = '10px Poppins, sans-serif';
+      ctx.fillText('电源', batX - 12, centerY - 36);
+
+      ctx.strokeStyle = '#3d4f5f';
+      ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.moveTo(batX + 15, centerY);
-      ctx.lineTo(220, centerY);
-      ctx.lineTo(220, topY);
-      ctx.lineTo(220, botY);
-      ctx.lineTo(220, centerY);
-      ctx.lineTo(360, centerY);
-      ctx.lineTo(360, topY);
-      ctx.lineTo(360, botY);
-      ctx.lineTo(360, centerY);
-      ctx.lineTo(batX - 15, centerY);
+      ctx.moveTo(batX + 18, centerY);
+      ctx.lineTo(junctL, centerY);
+      ctx.lineTo(junctL, wireTop);
+      ctx.lineTo(junctR, wireTop);
+      ctx.lineTo(junctR, centerY);
+      ctx.lineTo(junctL, centerY);
+      ctx.lineTo(junctL, wireBot);
+      ctx.lineTo(junctR, wireBot);
+      ctx.lineTo(junctR, centerY);
+      ctx.lineTo(batX - 18, centerY);
       ctx.stroke();
-      ctx.fillStyle = '#ffcc7c';
-      ctx.fillRect(258, topY - 12, 44, 24);
-      ctx.fillRect(258, botY - 12, 44, 24);
+
+      const r1Color = resistToColor(r1);
+      const r2Color = resistToColor(r2);
+      const boxW = 52;
+      const boxH = 28;
+      ctx.shadowColor = 'rgba(0,0,0,0.15)';
+      ctx.shadowBlur = 6;
+      ctx.fillStyle = r1Color;
+      ctx.fillRect(junctL + 24, wireTop - boxH / 2, boxW, boxH);
+      ctx.strokeStyle = '#2d3142';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(junctL + 24, wireTop - boxH / 2, boxW, boxH);
       ctx.fillStyle = '#1f2a44';
+      ctx.font = 'bold 11px Poppins, sans-serif';
+      ctx.fillText(`R₁=${r1}Ω`, junctL + 30, wireTop + 4);
+      ctx.font = '9px Poppins, sans-serif';
+      ctx.fillStyle = '#5a6478';
+      ctx.fillText('阻碍电流', junctL + 26, wireTop + 18);
+      ctx.fillStyle = r2Color;
+      ctx.fillRect(junctL + 24, wireBot - boxH / 2, boxW, boxH);
+      ctx.strokeRect(junctL + 24, wireBot - boxH / 2, boxW, boxH);
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = 'bold 11px Poppins, sans-serif';
+      ctx.fillText(`R₂=${r2}Ω`, junctL + 30, wireBot + 4);
+      ctx.font = '9px Poppins, sans-serif';
+      ctx.fillStyle = '#5a6478';
+      ctx.fillText('阻碍电流', junctL + 26, wireBot + 18);
+      ctx.shadowBlur = 0;
+
+      const particleSpeed = 0.12 + iTotal * 0.04;
+      const drawParticles = (x0, y0, x1, y1, count, brightness) => {
+        const dx = x1 - x0;
+        const dy = y1 - y0;
+        const len = Math.hypot(dx, dy) || 1;
+        const ux = dx / len;
+        const uy = dy / len;
+        for (let i = 0; i < count; i++) {
+          const phase = (t * particleSpeed * 80 + i * (60 / count)) % (len + 30);
+          const px = x0 + ux * phase;
+          const py = y0 + uy * phase;
+          if (phase <= len + 8) {
+            const alpha = brightness * (0.5 + 0.5 * Math.sin(t * 3 + i));
+            const r = 2.5 + (iTotal / 2) * 0.3;
+            ctx.fillStyle = `rgba(76,140,255,${alpha})`;
+            ctx.beginPath();
+            ctx.arc(px, py, r, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      };
+      const mainCount = 14 + Math.round(iTotal * 4);
+      drawParticles(batX + 18, centerY, junctL, centerY, mainCount, 0.9);
+      drawParticles(junctR, centerY, batX - 18, centerY, mainCount, 0.9);
+      drawParticles(junctL, wireTop, junctR, wireTop, Math.max(4, Math.round(i1 * 8)), 0.5 + i1 * 0.15);
+      drawParticles(junctL, wireBot, junctR, wireBot, Math.max(4, Math.round(i2 * 8)), 0.5 + i2 * 0.15);
+      drawParticles(junctL, centerY, junctL, wireTop, Math.max(3, Math.round(i1 * 6)), 0.5 + i1 * 0.12);
+      drawParticles(junctL, wireBot, junctL, centerY, Math.max(3, Math.round(i2 * 6)), 0.5 + i2 * 0.12);
+      drawParticles(junctR, wireTop, junctR, centerY, Math.max(3, Math.round(i1 * 6)), 0.5 + i1 * 0.12);
+      drawParticles(junctR, centerY, junctR, wireBot, Math.max(3, Math.round(i2 * 6)), 0.5 + i2 * 0.12);
+
+      const infoBoxX = w - 198;
+      const infoBoxY = 20;
+      const pulse = 0.92 + 0.08 * Math.sin(t * 5);
+      ctx.fillStyle = `rgba(76,123,229,${pulse})`;
+      ctx.fillRect(infoBoxX, infoBoxY, 176, 68);
+      ctx.strokeStyle = 'rgba(76,123,229,0.5)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(infoBoxX, infoBoxY, 176, 68);
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = 'bold 12px Poppins, sans-serif';
+      ctx.fillText(`R总≈${rTotal.toFixed(1)} Ω`, infoBoxX + 10, infoBoxY + 22);
+      ctx.fillText(`I总 = ${iTotal.toFixed(2)} A`, infoBoxX + 10, infoBoxY + 40);
+      ctx.fillText(`I₁=${i1.toFixed(2)} A  I₂=${i2.toFixed(2)} A`, infoBoxX + 10, infoBoxY + 58);
+
+      const sceneY = h - 72;
+      ctx.fillStyle = '#a08060';
+      ctx.fillRect(40, sceneY, 100, 50);
+      ctx.fillStyle = '#c0a070';
+      ctx.fillRect(44, sceneY + 4, 92, 42);
+      ctx.fillStyle = '#4a4a4a';
+      ctx.fillRect(70, sceneY + 20, 12, 28);
+      ctx.fillStyle = '#6a6a6a';
+      ctx.fillRect(72, sceneY + 18, 8, 6);
+      const lampBright = clamp(iTotal / 1.2, 0, 1);
+      const lampGlow = 8 + lampBright * 25;
+      const lampR = 8 + lampBright * 4;
+      ctx.shadowColor = `rgba(255,220,100,${0.4 + lampBright * 0.6})`;
+      ctx.shadowBlur = lampGlow;
+      ctx.fillStyle = lampBright <= 0.1 ? '#8a7a50' : `rgb(255,${Math.round(255 - lampBright * 80)},${Math.round(150 - lampBright * 100)})`;
+      ctx.beginPath();
+      ctx.arc(76, sceneY + 12, lampR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = '10px Poppins, sans-serif';
+      ctx.fillText('台灯', 58, sceneY + 52);
+      if (iTotal > 0.4) {
+        ctx.fillStyle = lampBright > 0.5 ? '#2e7d32' : '#5a6478';
+        ctx.font = '9px Poppins, sans-serif';
+        ctx.fillText('电流↑ 灯更亮', 42, sceneY + 66);
+      }
+      ctx.fillStyle = '#3d4556';
+      ctx.fillRect(180, sceneY + 15, 70, 40);
+      ctx.fillStyle = '#2d3548';
+      ctx.fillRect(184, sceneY + 19, 62, 32);
+      ctx.fillStyle = '#1a1f2e';
+      ctx.fillRect(188, sceneY + 23, 54, 20);
+      ctx.fillText('电视', 198, sceneY + 52);
+      ctx.fillStyle = '#5a5040';
+      ctx.fillRect(300, sceneY + 25, 24, 28);
+      ctx.fillStyle = '#7a7060';
+      ctx.fillRect(304, sceneY + 28, 16, 22);
+      ctx.fillText('插座', 298, sceneY + 52);
+      ctx.fillStyle = '#5a6478';
       ctx.font = '11px Poppins, sans-serif';
-      ctx.fillText(`R₁=${r1}Ω`, 262, topY + 4);
-      ctx.fillText(`R₂=${r2}Ω`, 262, botY + 4);
-      const blink = 0.7 + 0.3 * Math.sin(params.time * 4);
-      ctx.fillStyle = `rgba(76,123,229,${blink})`;
-      ctx.font = 'bold 13px Poppins, sans-serif';
-      ctx.fillText(`1/R总 = 1/R₁ + 1/R₂  →  R总≈${rTotal.toFixed(1)} Ω`, 24, 42);
-      ctx.fillText(`I总 = I₁ + I₂ = ${iTotal.toFixed(2)} A`, 24, 62);
-      ctx.fillText(`I₁=${i1.toFixed(2)} A  I₂=${i2.toFixed(2)} A`, 24, 80);
+      ctx.fillText('家庭并联：台灯与电视独立工作，电压相同', 28, sceneY - 6);
       ctx.restore();
     }
 
@@ -5705,21 +5879,37 @@
         teachingPoints: [
           '先求 1/R总 = 1/R₁ + 1/R₂，再求 R总。',
           '各支路电流 I₁ = U/R₁，I₂ = U/R₂，I总 = I₁ + I₂。',
-          '并联电阻越并越小。'
+          '并联电阻越并越小；总电流越大，用电器（如台灯）越亮。'
         ],
         sliders: [
-          { id: 'r1', label: '电阻 R₁ (Ω)', min: 10, max: 50, step: 5, value: 20, unit: 'Ω' },
-          { id: 'r2', label: '电阻 R₂ (Ω)', min: 10, max: 50, step: 5, value: 30, unit: 'Ω' },
-          { id: 'voltage', label: '电压 U (V)', min: 3, max: 12, step: 1, value: 6, unit: 'V' }
+          { id: 'r1', label: '电阻 R₁ (Ω)', min: 10, max: 50, step: 5, value: 20, unit: 'Ω', ticks: [10, 20, 30, 40, 50] },
+          { id: 'r2', label: '电阻 R₂ (Ω)', min: 10, max: 50, step: 5, value: 30, unit: 'Ω', ticks: [10, 20, 30, 40, 50] },
+          { id: 'voltage', label: '电压 U (V)', min: 3, max: 12, step: 1, value: 6, unit: 'V', ticks: [3, 6, 9, 12] }
         ],
         getDetails: (p) => {
           const r1 = p.r1 || 20;
           const r2 = p.r2 || 30;
+          const u = p.voltage || 6;
           const rt = 1 / (1 / r1 + 1 / r2);
-          return `R总≈${rt.toFixed(1)} Ω  I总=${(p.voltage / rt).toFixed(2)} A`;
+          const iTotal = u / rt;
+          return `R总≈${rt.toFixed(1)} Ω  I总=${iTotal.toFixed(2)} A`;
+        },
+        practice: {
+          prompt: '让总电流达到 2 A',
+          unit: 'A',
+          targets: [2],
+          tolerance: 0.08,
+          getCurrent: (p) => {
+            const r1 = p.r1 || 20;
+            const r2 = p.r2 || 30;
+            const u = p.voltage || 6;
+            const rt = 1 / (1 / r1 + 1 / r2);
+            return u / rt;
+          },
+          format: (v) => `${v.toFixed(2)} A`
         },
         textbook: '参考鲁科版《九年级物理》并联电路：教材用电流表测各支路与干路电流，得出 I总 = I₁ + I₂，并推导 1/R总 = 1/R₁ + 1/R₂。',
-        animationDesc: '两电阻并联：电池、干路与两支路，电流表显示 I总、I₁、I₂；调节 R₁、R₂、U 观察 R总与电流分配。',
+        animationDesc: '两电阻并联：电池、干路与两支路，电流流动光点、电阻热力图、家庭场景；调节 R₁、R₂、U 观察 R总与电流分配。',
         realityPoint: '家庭电路、并联用电器、总电流分流。',
         draw: drawParallel
       },
@@ -5961,6 +6151,11 @@
     const practiceRing = document.getElementById('practiceRing');
     const practiceReset = document.getElementById('practiceReset');
     const practiceExplain = document.getElementById('practiceExplain');
+    const practiceProgressWrap = document.getElementById('practiceProgressWrap');
+    const practiceProgressFill = document.getElementById('practiceProgressFill');
+    const practiceProgressText = document.getElementById('practiceProgressText');
+    const practiceHasTask = document.getElementById('practiceHasTask');
+    const practiceNoTask = document.getElementById('practiceNoTask');
     const navToggle = document.getElementById('navToggle');
     const sidebar = document.querySelector('.sidebar');
     const sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -6099,6 +6294,20 @@
         wrapper.appendChild(title);
         wrapper.appendChild(row);
         wrapper.appendChild(valueEl);
+        if (slider.ticks && Array.isArray(slider.ticks) && slider.ticks.length) {
+          const ticksWrap = document.createElement('div');
+          ticksWrap.className = 'slider-ticks';
+          const min = slider.min;
+          const max = slider.max;
+          slider.ticks.forEach((tickVal) => {
+            const span = document.createElement('span');
+            span.className = 'slider-tick';
+            span.textContent = `${tickVal}${slider.unit ? slider.unit : ''}`;
+            span.style.left = `${((tickVal - min) / (max - min)) * 100}%`;
+            ticksWrap.appendChild(span);
+          });
+          wrapper.appendChild(ticksWrap);
+        }
         sliderContainer.appendChild(wrapper);
       });
       updateInfo();
@@ -6139,7 +6348,17 @@
     }
 
     function updatePractice() {
-      if (!currentPrinciple || !currentPrinciple.practice) return;
+      if (!currentPrinciple) return;
+      if (!currentPrinciple.practice) {
+        if (practiceHasTask) practiceHasTask.style.display = 'none';
+        if (practiceNoTask) {
+          practiceNoTask.style.display = 'block';
+          practiceNoTask.textContent = '本模块暂无可视化练习，请通过调节滑块探索规律。';
+        }
+        return;
+      }
+      if (practiceHasTask) practiceHasTask.style.display = '';
+      if (practiceNoTask) practiceNoTask.style.display = 'none';
       const practice = currentPrinciple.practice;
       const target = ensurePracticeTarget(currentPrinciple);
       const current = practice.getCurrent(currentParams);
@@ -6168,9 +6387,30 @@
       if (success) {
         practiceStatus.textContent = `完成！当前 ${formattedCurrent} 已满足目标要求，继续挑战新的目标吧。`;
         practiceStatus.style.color = '#2da44e';
+        practiceRing.style.stroke = '#2da44e';
       } else {
         practiceStatus.textContent = `当前：${formattedCurrent}，与目标差≈${formattedDiff}，继续微调滑块。`;
         practiceStatus.style.color = '#56618a';
+        const ratioForColor = clamp(ratio, 0, 1);
+        if (currentPrinciple.id === 'parallel') {
+          practiceRing.style.stroke = ratioForColor >= 0.8 ? '#2da44e' : ratioForColor >= 0.5 ? '#e67700' : '#c62828';
+        } else {
+          practiceRing.style.stroke = '';
+        }
+      }
+      const isParallel = currentPrinciple && currentPrinciple.id === 'parallel';
+      if (practiceProgressWrap) {
+        practiceProgressWrap.style.display = isParallel && practice ? 'block' : 'none';
+      }
+      if (isParallel && practice && practiceProgressFill && practiceProgressText) {
+        practiceProgressFill.style.width = `${Math.round(ratio * 100)}%`;
+        practiceProgressFill.style.background = ratio >= 0.8 ? 'linear-gradient(90deg, #81c784, #2da44e)' : ratio >= 0.5 ? 'linear-gradient(90deg, #ffb74d, #e67700)' : 'linear-gradient(90deg, #e57373, #c62828)';
+        if (success) {
+          practiceProgressText.textContent = '已达成目标电流！';
+        } else {
+          const gap = Math.abs(target - current);
+          practiceProgressText.textContent = `还差 ${gap.toFixed(2)} A`;
+        }
       }
     }
 
@@ -6186,23 +6426,54 @@
       const formulaSteps = currentPrinciple.formulaSteps && currentPrinciple.formulaSteps.length
         ? `<ul class="formula-extras">${currentPrinciple.formulaSteps.map((step) => `<li>${step}</li>`).join('')}</ul>`
         : '';
-      let formulaMainHtml = '';
-      const raw = currentPrinciple.formula;
-      const formulas = Array.isArray(raw) ? raw : (raw ? [raw] : []);
-      if (typeof window.katex !== 'undefined' && formulas.length) {
-        formulaMainHtml = formulas.map((latex) => {
+      if (currentPrinciple.id === 'parallel') {
+        const r1 = currentParams.r1 != null ? currentParams.r1 : 20;
+        const r2 = currentParams.r2 != null ? currentParams.r2 : 30;
+        const u = currentParams.voltage != null ? currentParams.voltage : 6;
+        const invR = 1 / r1 + 1 / r2;
+        const rTotal = 1 / invR;
+        const i1 = u / r1;
+        const i2 = u / r2;
+        const iTotal = i1 + i2;
+        let parallelFormulaHtml = '';
+        if (typeof window.katex !== 'undefined') {
           try {
-            const span = document.createElement('span');
-            span.className = 'formula-line';
-            window.katex.render(latex, span, { throwOnError: false, displayMode: true });
-            return span.outerHTML;
-          } catch (e) {
-            return `<span class="formula-line">${formatFormula(latex)}</span>`;
-          }
-        }).join('');
+            const s1 = document.createElement('span');
+            s1.className = 'formula-line';
+            window.katex.render('\\frac{1}{R_{\\text{总}}} = \\frac{1}{R_1} + \\frac{1}{R_2}', s1, { throwOnError: false, displayMode: true });
+            const s2 = document.createElement('span');
+            s2.className = 'formula-line';
+            window.katex.render('I_{\\text{总}} = I_1 + I_2', s2, { throwOnError: false, displayMode: true });
+            parallelFormulaHtml = s1.outerHTML + s2.outerHTML;
+          } catch (e) { parallelFormulaHtml = '<span class="formula-line">1/R总 = 1/R₁ + 1/R₂，I总 = I₁ + I₂</span>'; }
+        } else {
+          parallelFormulaHtml = '<span class="formula-line">1/R总 = 1/R₁ + 1/R₂，I总 = I₁ + I₂</span>';
+        }
+        const derivation = `<div class="formula-derivation">
+          <p>1/R<sub>总</sub> = 1/R<sub>1</sub> + 1/R<sub>2</sub> = 1/<span class="r1">${r1}</span> + 1/<span class="r2">${r2}</span> = ${(1/r1).toFixed(3)} + ${(1/r2).toFixed(3)} = ${invR.toFixed(4)} → R<sub>总</sub>≈<strong>${rTotal.toFixed(1)} Ω</strong></p>
+          <p>I<sub>总</sub> = I<sub>1</sub> + I<sub>2</sub> = <span class="u">${u}</span>/<span class="r1">${r1}</span> + <span class="u">${u}</span>/<span class="r2">${r2}</span> = ${i1.toFixed(2)} + ${i2.toFixed(2)} = <strong>${iTotal.toFixed(2)} A</strong></p>
+          <p class="formula-detail">R₁ 对应红色、R₂ 对应蓝色、U 对应绿色，与滑块联动。</p>
+        </div>`;
+        formulaText.innerHTML = `<div class="formula-main math-text">${parallelFormulaHtml}</div>${derivation}${formulaSteps}`;
+      } else {
+        let formulaMainHtml = '';
+        const raw = currentPrinciple.formula;
+        const formulas = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+        if (typeof window.katex !== 'undefined' && formulas.length) {
+          formulaMainHtml = formulas.map((latex) => {
+            try {
+              const span = document.createElement('span');
+              span.className = 'formula-line';
+              window.katex.render(latex, span, { throwOnError: false, displayMode: true });
+              return span.outerHTML;
+            } catch (e) {
+              return `<span class="formula-line">${formatFormula(latex)}</span>`;
+            }
+          }).join('');
+        }
+        if (!formulaMainHtml && raw) formulaMainHtml = `<span class="formula-line">${formatFormula(Array.isArray(raw) ? raw.join(' ') : raw)}</span>`;
+        formulaText.innerHTML = `<div class="formula-main math-text">${formulaMainHtml}</div><p class="formula-detail">${formulaDetail}</p>${formulaSteps}`;
       }
-      if (!formulaMainHtml && raw) formulaMainHtml = `<span class="formula-line">${formatFormula(Array.isArray(raw) ? raw.join(' ') : raw)}</span>`;
-      formulaText.innerHTML = `<div class="formula-main math-text">${formulaMainHtml}</div><p class="formula-detail">${formulaDetail}</p>${formulaSteps}`;
       updatePractice();
     }
 
