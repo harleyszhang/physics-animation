@@ -638,6 +638,8 @@
     .extra-practice-item .prompt { font-weight: 600; color: #1d2a44; margin-bottom: 8px; }
     .extra-practice-item .answer { color: #40507a; font-size: 0.95rem; }
     .formula-main .katex { font-size: 1.1em; }
+    .formula-main { overflow-x: auto; max-width: 100%; }
+    .formula-main .formula-line { display: block; margin: 6px 0; }
     @keyframes scaleUp {
       0% { transform: scale(0.92); opacity: 0; }
       100% { transform: scale(1); opacity: 1; }
@@ -2702,9 +2704,18 @@
         ctx.fill();
       }
 
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '14px Poppins, sans-serif';
-      ctx.fillText(`向心加速度 a = v² / r = ${(params.speed * params.speed / params.radius).toFixed(2)} m/s²`, 30, 40);
+      const ac = (params.speed * params.speed / Math.max(params.radius, 0.5)).toFixed(2);
+      ctx.fillStyle = 'rgba(200,220,255,0.85)';
+      ctx.beginPath();
+      ctx.roundRect(24, 24, 220, 36, 10);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(76,123,229,0.4)';
+      ctx.stroke();
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = 'bold 14px Poppins, sans-serif';
+      ctx.fillText(`向心加速度 a_c = ${ac} m/s²`, 36, 48);
+      ctx.font = '12px Poppins, sans-serif';
+      ctx.fillText(`v = ${params.speed} m/s，r = ${params.radius} m → a_c = v²/r`, 30, 78);
       ctx.fillText('雨伞甩出的水滴沿切线飞出 → “离心力”只是惯性', 30, 64);
       ctx.restore();
     }
@@ -2925,16 +2936,17 @@
 
       // 信息板
       ctx.fillStyle = 'rgba(255,255,255,0.9)';
-      ctx.fillRect(w - 200, 36, 175, 118);
+      ctx.fillRect(w - 200, 36, 175, 132);
       ctx.strokeStyle = '#c8d0e0';
-      ctx.strokeRect(w - 200, 36, 175, 118);
+      ctx.strokeRect(w - 200, 36, 175, 132);
       ctx.fillStyle = '#1f2a44';
       ctx.font = '13px Poppins, sans-serif';
       ctx.fillText(`时间 ${Math.min(progress, totalTime).toFixed(2)} / ${totalTime.toFixed(2)} s`, w - 192, 58);
       ctx.fillText(`最大高度 ${maxHeight.toFixed(1)} m`, w - 192, 78);
       ctx.fillText(`射程 R = ${range.toFixed(1)} m`, w - 192, 98);
       ctx.fillText(`初速 v = ${v.toFixed(1)} m/s`, w - 192, 118);
-      ctx.fillText(`靶距 25 m ${range >= 24 && range <= 26 ? '→ 可命中' : range < 24 ? '→ 未达' : '→ 越过'}`, w - 192, 142);
+      ctx.fillText(`发射角 θ = ${params.angle.toFixed(0)}°`, w - 192, 132);
+      ctx.fillText(`靶距 25 m ${range >= 24 && range <= 26 ? '→ 可命中' : range < 24 ? '→ 未达' : '→ 越过'}`, w - 192, 152);
       ctx.restore();
     }
 
@@ -5195,7 +5207,7 @@
           { id: 'speed', label: '线速度 v (m/s)', min: 1, max: 20, step: 1, value: 8, unit: 'm/s' },
           { id: 'radius', label: '半径 r (m)', min: 1, max: 10, step: 0.5, value: 4, unit: 'm' }
         ],
-        getDetails: (p) => `aₐ = ${(p.speed * p.speed / p.radius).toFixed(2)} m/s²`,
+        getDetails: (p) => `a_c = ${(p.speed * p.speed / p.radius).toFixed(2)} m/s²`,
         practice: {
           prompt: '让向心加速度接近 10 m/s²',
           unit: 'm/s²',
@@ -5212,7 +5224,11 @@
         id: 'projectile',
         name: '斜抛运动',
         category: '力学',
-        formula: 'x = v_x t \\quad y = v_y t - \\frac{1}{2}gt^2 \\quad R = \\frac{v^2 \\sin(2\\theta)}{g}',
+        formula: [
+          'x = v_x t \\quad (\\text{水平匀速})',
+          'y = v_y t - \\frac{1}{2}gt^2 \\quad (\\text{竖直匀变速})',
+          'R = \\frac{v^2 \\sin(2\\theta)}{g} \\quad (\\text{射程})'
+        ],
         formulaDetail: '初速分解 v_x = v cos θ，v_y = v sin θ。水平匀速、竖直匀变速；飞行时间 T = 2v_y/g，最大高度 H = v_y²/(2g)，射程 R = v²sin(2θ)/g。θ=45° 时射程最大。',
         summary: '斜抛可分解为水平匀速与竖直上抛的叠加。掌握飞行时间、最高点与射程公式，即可分析炮弹、投篮、喷泉等轨迹。',
         teachingPoints: [
@@ -5227,7 +5243,8 @@
         getDetails: (p) => {
           const angle = toRad(p.angle);
           const range = (p.speed * p.speed * Math.sin(2 * angle)) / g;
-          return `射程≈${range.toFixed(1)} m`;
+          const H = (p.speed * p.speed * Math.sin(angle) * Math.sin(angle)) / (2 * g);
+          return `射程 R≈${range.toFixed(1)} m，最大高度 H≈${H.toFixed(1)} m`;
         },
         practice: {
           prompt: '尝试让射程达到 20 m',
@@ -6169,14 +6186,22 @@
       const formulaSteps = currentPrinciple.formulaSteps && currentPrinciple.formulaSteps.length
         ? `<ul class="formula-extras">${currentPrinciple.formulaSteps.map((step) => `<li>${step}</li>`).join('')}</ul>`
         : '';
-      let formulaMainHtml = formatFormula(currentPrinciple.formula);
-      if (typeof window.katex !== 'undefined' && currentPrinciple.formula) {
-        try {
-          const span = document.createElement('span');
-          window.katex.render(currentPrinciple.formula, span, { throwOnError: false, displayMode: true });
-          formulaMainHtml = span.outerHTML;
-        } catch (e) { /* keep formatFormula result */ }
+      let formulaMainHtml = '';
+      const raw = currentPrinciple.formula;
+      const formulas = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+      if (typeof window.katex !== 'undefined' && formulas.length) {
+        formulaMainHtml = formulas.map((latex) => {
+          try {
+            const span = document.createElement('span');
+            span.className = 'formula-line';
+            window.katex.render(latex, span, { throwOnError: false, displayMode: true });
+            return span.outerHTML;
+          } catch (e) {
+            return `<span class="formula-line">${formatFormula(latex)}</span>`;
+          }
+        }).join('');
       }
+      if (!formulaMainHtml && raw) formulaMainHtml = `<span class="formula-line">${formatFormula(Array.isArray(raw) ? raw.join(' ') : raw)}</span>`;
       formulaText.innerHTML = `<div class="formula-main math-text">${formulaMainHtml}</div><p class="formula-detail">${formulaDetail}</p>${formulaSteps}`;
       updatePractice();
     }
