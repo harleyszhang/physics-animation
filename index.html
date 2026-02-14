@@ -79,6 +79,41 @@
       overflow-y: auto;
       z-index: 2;
     }
+    .sidebar-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 27, 53, 0.35);
+      backdrop-filter: blur(3px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 1;
+    }
+    .sidebar-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .nav-toggle {
+      position: fixed;
+      top: 18px;
+      left: 20px;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255,255,255,0.95);
+      box-shadow: 0 10px 30px rgba(31,42,68,0.18);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: var(--primary);
+      z-index: 6;
+      cursor: pointer;
+    }
+    .nav-toggle:active {
+      transform: scale(0.95);
+    }
     .logo {
       display: flex;
       align-items: center;
@@ -460,22 +495,38 @@
       color: var(--primary);
       font-size: 18px;
     }
-    @media (max-width: 700px) {
+    @media (max-width: 900px) {
+      .nav-toggle {
+        display: inline-flex;
+      }
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        transform: translateX(-105%);
+        width: 260px;
+        max-width: 85vw;
+        box-shadow: 20px 0 45px rgba(31,42,68,0.2);
+        transition: transform 0.3s ease;
+        z-index: 5;
+      }
+      .sidebar.open {
+        transform: translateX(0);
+      }
       .app-shell {
         flex-direction: column;
       }
-      .sidebar {
-        width: 100%;
-        height: auto;
-        position: relative;
-      }
       .main-panel {
-        padding: 18px;
+        padding: 20px;
+        width: 100%;
       }
     }
   </style>
 </head>
 <body>
+  <button id="navToggle" class="nav-toggle"><i class="fa-solid fa-bars"></i></button>
+  <div id="sidebarOverlay" class="sidebar-overlay"></div>
   <div class="glow one"></div>
   <div class="glow two"></div>
   <div class="app-shell">
@@ -628,327 +679,451 @@
     }
 
     function drawNewton(ctx, w, h, params) {
-      const groundY = h * 0.78;
+      const roadY = h * 0.78;
       ctx.save();
-      ctx.strokeStyle = '#cfe1ff';
-      ctx.lineWidth = 2;
+      const gradient = ctx.createLinearGradient(0, 0, 0, roadY);
+      gradient.addColorStop(0, '#d7ecff');
+      gradient.addColorStop(1, '#ffffff');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, w, roadY);
+      ctx.fillStyle = '#c2cfe3';
+      ctx.fillRect(0, roadY, w, h - roadY);
+      ctx.strokeStyle = '#ffffff';
+      ctx.setLineDash([20, 15]);
+      ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.moveTo(30, groundY);
-      ctx.lineTo(w - 30, groundY);
+      ctx.moveTo(0, roadY - 20);
+      ctx.lineTo(w, roadY - 20);
       ctx.stroke();
+      ctx.setLineDash([]);
 
-      const blockWidth = 120;
-      const blockHeight = 65;
-      const baseX = w * 0.18;
+      const carWidth = 140;
+      const carHeight = 60;
       const acc = params.force / params.mass;
-      const simTime = (params.time % 5);
-      const displacement = 0.5 * acc * simTime * simTime * 28;
-      const blockX = baseX + Math.min(displacement, w * 0.5);
-      const blockY = groundY - blockHeight - 12;
-      ctx.fillStyle = '#fff';
-      ctx.strokeStyle = '#4c7be5';
-      ctx.lineWidth = 3;
-      roundedRectPath(ctx, blockX, blockY, blockWidth, blockHeight, 16);
+      const simTime = params.time % 4;
+      const displacement = 0.5 * acc * simTime * simTime * 40;
+      const carX = w * 0.1 + displacement;
+      const carY = roadY - carHeight - 10;
+
+      ctx.fillStyle = '#5876c5';
+      roundedRectPath(ctx, carX, carY, carWidth, carHeight, 20);
       ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = '#4c7be5';
+      ctx.fillStyle = '#f0f6ff';
+      roundedRectPath(ctx, carX + 20, carY + 10, carWidth - 70, 28, 14);
+      ctx.fill();
+      ctx.fillStyle = '#1f2a44';
       ctx.beginPath();
-      ctx.arc(blockX + 30, groundY - 5, 10, 0, Math.PI * 2);
-      ctx.arc(blockX + blockWidth - 30, groundY - 5, 10, 0, Math.PI * 2);
+      ctx.arc(carX + 25, roadY - 6, 16, 0, Math.PI * 2);
+      ctx.arc(carX + carWidth - 35, roadY - 6, 16, 0, Math.PI * 2);
       ctx.fill();
-      const arrowLen = 30 + params.force * 8;
-      drawArrow(ctx, blockX + blockWidth + 5, blockY + blockHeight / 2, blockX + blockWidth + arrowLen, blockY + blockHeight / 2, '#ff9b45', 4);
+
+      const arrowLen = 50 + params.force * 8;
+      drawArrow(ctx, carX + carWidth + 10, carY + carHeight / 2, carX + carWidth + arrowLen, carY + carHeight / 2, '#ff9b45', 5);
       ctx.fillStyle = '#ff9b45';
       ctx.font = '16px Poppins, sans-serif';
-      ctx.fillText(`F=${params.force.toFixed(1)}N`, blockX + blockWidth + arrowLen + 10, blockY + blockHeight / 2 + 6);
-      ctx.fillStyle = '#4c7be5';
-      ctx.fillText(`m=${params.mass.toFixed(1)}kg`, blockX + 6, blockY - 12);
-      ctx.fillText(`a=${acc.toFixed(2)}m/s²`, blockX + 6, blockY + blockHeight + 24);
-      ctx.fillText(`v≈${(acc * simTime).toFixed(2)}m/s`, blockX + 6, blockY + blockHeight + 42);
+      ctx.fillText(`F=${params.force.toFixed(1)}N`, carX + carWidth + arrowLen + 10, carY + carHeight / 2 + 6);
+
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = '14px Poppins, sans-serif';
+      ctx.fillText(`m=${params.mass.toFixed(1)}kg`, carX, carY - 12);
+      ctx.fillText(`a=${acc.toFixed(2)}m/s²`, carX, carY + carHeight + 26);
+      ctx.fillText(`当前速度≈${(acc * simTime).toFixed(2)}m/s`, carX, carY + carHeight + 44);
+
+      const speedStreaks = Math.min(6, Math.floor(acc * 4));
+      ctx.strokeStyle = 'rgba(255,155,69,0.7)';
+      ctx.lineWidth = 3;
+      for (let i = 0; i < speedStreaks; i++) {
+        const offset = (simTime * 120 + i * 35) % (w * 0.6);
+        ctx.beginPath();
+        ctx.moveTo(carX - offset, carY + carHeight / 2 - 15 + i * 5);
+        ctx.lineTo(carX - offset - 30, carY + carHeight / 2 - 20 + i * 5);
+        ctx.stroke();
+      }
       ctx.restore();
     }
 
     function drawBuoyancy(ctx, w, h, params) {
-      const tankX = w * 0.12;
-      const tankWidth = w * 0.76;
-      const tankTop = h * 0.15;
-      const tankHeight = h * 0.7;
+      const waterTop = h * 0.35;
       ctx.save();
-      ctx.fillStyle = '#d8ecff';
-      roundedRectPath(ctx, tankX, tankTop, tankWidth, tankHeight, 26);
-      ctx.fill();
-      ctx.fillStyle = '#bfe3ff';
-      roundedRectPath(ctx, tankX + 8, tankTop + 50, tankWidth - 16, tankHeight - 80, 20);
-      ctx.fill();
-      for (let i = 0; i < 9; i++) {
-        const bx = tankX + 20 + (i * tankWidth) / 9 + Math.sin(params.time * 2 + i) * 8;
-        const by = tankTop + tankHeight - ((params.time * 40 + i * 25) % (tankHeight - 120));
-        ctx.globalAlpha = 0.4;
-        ctx.fillStyle = '#fff';
+      ctx.fillStyle = '#9ad4ff';
+      ctx.fillRect(0, waterTop, w, h - waterTop);
+      ctx.fillStyle = '#b6e0ff';
+      for (let i = 0; i < 40; i++) {
+        const waveY = waterTop + Math.sin(params.time * 2 + i) * 4;
         ctx.beginPath();
-        ctx.arc(bx, by, 6, 0, Math.PI * 2);
+        ctx.ellipse((i / 40) * w, waveY, 30, 10, 0, 0, Math.PI * 2);
         ctx.fill();
       }
-      ctx.globalAlpha = 1;
-      const blockSize = 90;
-      const baseY = tankTop + tankHeight - blockSize - 25;
-      const densityDiff = params.density - 1;
-      const blockY = clamp(baseY - densityDiff * 60, tankTop + 20, baseY);
-      const blockX = w * 0.44;
-      ctx.fillStyle = '#fff';
-      ctx.strokeStyle = '#4c7be5';
-      ctx.lineWidth = 3;
-      roundedRectPath(ctx, blockX, blockY, blockSize, blockSize, 14);
+
+      const personWeight = params.density * 100;
+      const displacementFactor = clamp((params.density) / 1.2, 0.2, 1.4);
+      const boatY = waterTop + 40 * displacementFactor;
+      const boatWidth = 220;
+      const boatHeight = 60;
+      const boatX = w * 0.5 - boatWidth / 2;
+
+      ctx.fillStyle = '#c47a34';
+      ctx.beginPath();
+      ctx.moveTo(boatX, boatY);
+      ctx.lineTo(boatX + boatWidth, boatY);
+      ctx.lineTo(boatX + boatWidth - 30, boatY + boatHeight);
+      ctx.lineTo(boatX + 30, boatY + boatHeight);
+      ctx.closePath();
       ctx.fill();
-      ctx.stroke();
-      const centerX = blockX + blockSize / 2;
+
+      ctx.fillStyle = '#f3d0a6';
+      ctx.fillRect(boatX + boatWidth / 2 - 10, boatY - 60, 20, 60);
+      ctx.beginPath();
+      ctx.arc(boatX + boatWidth / 2, boatY - 80, 22, 0, Math.PI * 2);
+      ctx.fill();
+
       const volumeM3 = params.volume / 1000;
       const buoy = 1000 * g * volumeM3;
       const weight = params.density * 1000 * g * volumeM3;
-      const scale = 0.02;
-      drawArrow(ctx, centerX, blockY + blockSize + 6, centerX, blockY + blockSize + 6 - buoy * scale, '#ff9b45', 4);
-      drawArrow(ctx, centerX, blockY - 6, centerX, blockY - 6 + weight * scale, '#4c7be5', 4);
+      const centerX = boatX + boatWidth / 2;
+      drawArrow(ctx, centerX, boatY + 10, centerX, boatY + 10 - buoy * 0.015, '#ff9b45', 5);
+      drawArrow(ctx, centerX, boatY - 70, centerX, boatY - 70 + weight * 0.015, '#1f3f7a', 5);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '15px Poppins, sans-serif';
+      ctx.fillText('浮力', centerX + 12, boatY + 10 - buoy * 0.015 - 6);
+      ctx.fillText('重力', centerX + 12, boatY - 70 + weight * 0.015 + 16);
+
       ctx.restore();
     }
 
     function drawLever(ctx, w, h, params) {
       const pivotX = w * 0.5;
-      const pivotY = h * 0.68;
+      const pivotY = h * 0.7;
       ctx.save();
-      ctx.strokeStyle = '#cfdcff';
-      ctx.lineWidth = 6;
-      ctx.lineCap = 'round';
+      ctx.fillStyle = '#c76f3c';
       ctx.beginPath();
-      ctx.moveTo(w * 0.15, pivotY);
-      ctx.lineTo(w * 0.85, pivotY);
-      ctx.stroke();
-      ctx.fillStyle = '#4c7be5';
-      ctx.beginPath();
-      ctx.moveTo(pivotX - 24, pivotY);
-      ctx.lineTo(pivotX, pivotY - 70);
-      ctx.lineTo(pivotX + 24, pivotY);
+      ctx.moveTo(pivotX - 25, pivotY);
+      ctx.lineTo(pivotX + 25, pivotY);
+      ctx.lineTo(pivotX + 5, pivotY + 70);
+      ctx.lineTo(pivotX - 5, pivotY + 70);
       ctx.closePath();
       ctx.fill();
+      ctx.strokeStyle = '#a75625';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.15, pivotY - 40);
+      ctx.lineTo(w * 0.85, pivotY + 40);
+      ctx.stroke();
+
       const leftPos = pivotX - params.leftArm * 45;
       const rightArm = 3;
       const rightPos = pivotX + rightArm * 45;
-      const wobble = Math.sin(params.time) * 6;
-      ctx.fillStyle = '#fff';
-      ctx.strokeStyle = '#4c7be5';
-      roundedRectPath(ctx, leftPos - 25, pivotY - 90 - wobble, 60, 55, 12);
+      const angleTilt = (params.leftForce * params.leftArm - rightArm * 3) * 0.005;
+
+      ctx.save();
+      ctx.translate(pivotX, pivotY);
+      ctx.rotate(angleTilt);
+      ctx.fillStyle = '#e4a653';
+      ctx.fillRect(-w * 0.35, -12, w * 0.7, 24);
+      ctx.restore();
+
+      const childRadius = 28;
+      ctx.fillStyle = '#ffcd9b';
+      ctx.beginPath();
+      ctx.arc(leftPos, pivotY - 70 - angleTilt * 40, childRadius, 0, Math.PI * 2);
       ctx.fill();
-      ctx.stroke();
-      roundedRectPath(ctx, rightPos - 25, pivotY - 80 + wobble, 60, 55, 12);
+      ctx.fillStyle = '#ff9b45';
+      ctx.fillRect(leftPos - 18, pivotY - 60 - angleTilt * 40, 36, 45);
+
+      ctx.fillStyle = '#cbe5ff';
+      ctx.beginPath();
+      ctx.arc(rightPos, pivotY - 40 + angleTilt * 40, childRadius, 0, Math.PI * 2);
       ctx.fill();
-      ctx.stroke();
-      drawArrow(ctx, leftPos, pivotY - 90 - wobble, leftPos, pivotY - 90 - wobble + params.leftForce * 9, '#ff9b45', 4);
+      ctx.fillStyle = '#4c7be5';
+      ctx.fillRect(rightPos - 18, pivotY - 30 + angleTilt * 40, 36, 45);
+
+      drawArrow(ctx, leftPos, pivotY - 80, leftPos, pivotY - 80 + params.leftForce * 8, '#ff9b45', 4);
       const needed = params.leftForce * params.leftArm / rightArm;
-      drawArrow(ctx, rightPos, pivotY - 80 + wobble, rightPos, pivotY - 80 + wobble + needed * 9, '#4c7be5', 4);
+      drawArrow(ctx, rightPos, pivotY - 50, rightPos, pivotY - 50 + needed * 8, '#4c7be5', 4);
       ctx.restore();
     }
 
     function drawReflection(ctx, w, h, params) {
-      const mirrorY = h * 0.7;
+      const tableY = h * 0.75;
       ctx.save();
-      ctx.strokeStyle = '#9ebeff';
-      ctx.lineWidth = 3;
+      ctx.fillStyle = '#f0f4ff';
+      ctx.fillRect(0, 0, w, tableY);
+      ctx.fillStyle = '#d9e4ff';
+      ctx.fillRect(0, tableY, w, h - tableY);
+
+      ctx.fillStyle = '#b18f6a';
+      ctx.fillRect(w * 0.15, tableY - 150, 16, 150);
+      ctx.fillRect(w * 0.15 + 180, tableY - 150, 16, 150);
+      ctx.fillStyle = '#c5cedd';
+      ctx.fillRect(w * 0.15, tableY - 150, 196, 8);
+
+      const mirrorX = w * 0.65;
+      ctx.fillStyle = '#9ed8ff';
+      ctx.fillRect(mirrorX - 6, tableY - 180, 12, 180);
+
+      const flashlightX = w * 0.25;
+      const flashlightY = tableY - 60;
+      ctx.fillStyle = '#ff9b45';
+      ctx.fillRect(flashlightX - 25, flashlightY - 15, 50, 30);
       ctx.beginPath();
-      ctx.moveTo(40, mirrorY);
-      ctx.lineTo(w - 40, mirrorY);
+      ctx.arc(flashlightX - 40, flashlightY, 15, Math.PI / 2, -Math.PI / 2);
+      ctx.fill();
+
+      const baseAngle = toRad(params.angle);
+      const oscillation = toRad(5) * Math.sin(params.time * 1.2);
+      const angle = clamp(baseAngle + oscillation, toRad(5), toRad(80));
+      const len = 180;
+      ctx.strokeStyle = '#ffd782';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(flashlightX - 40, flashlightY);
+      ctx.lineTo(mirrorX, flashlightY - Math.tan(angle) * (mirrorX - (flashlightX - 40)));
       ctx.stroke();
-      const originX = w / 2;
+
+      const hitY = flashlightY - Math.tan(angle) * (mirrorX - (flashlightX - 40));
+      ctx.strokeStyle = '#9ad1ff';
+      ctx.beginPath();
+      ctx.moveTo(mirrorX, hitY);
+      ctx.lineTo(mirrorX + Math.cos(angle) * len, hitY - Math.sin(angle) * len);
+      ctx.stroke();
+
       ctx.setLineDash([6, 6]);
       ctx.strokeStyle = '#ffcf80';
       ctx.beginPath();
-      ctx.moveTo(originX, mirrorY - 150);
-      ctx.lineTo(originX, mirrorY + 60);
+      ctx.moveTo(mirrorX, hitY - 120);
+      ctx.lineTo(mirrorX, hitY + 120);
       ctx.stroke();
       ctx.setLineDash([]);
-      const angle = toRad(params.angle);
-      const len = 160;
-      ctx.strokeStyle = '#4c7be5';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(originX - Math.sin(angle) * len, mirrorY - Math.cos(angle) * len);
-      ctx.lineTo(originX, mirrorY);
-      ctx.stroke();
-      ctx.strokeStyle = '#ff9b45';
-      ctx.beginPath();
-      ctx.moveTo(originX, mirrorY);
-      ctx.lineTo(originX + Math.sin(angle) * len, mirrorY - Math.cos(angle) * len);
-      ctx.stroke();
+
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = '14px Poppins, sans-serif';
+      ctx.fillText(`θi=${params.angle.toFixed(0)}°`, mirrorX - 120, hitY - 40);
+      ctx.fillText(`θr=${params.angle.toFixed(0)}°`, mirrorX + 40, hitY - 40);
       ctx.restore();
     }
 
     function drawRefraction(ctx, w, h, params) {
-      const interfaceY = h * 0.5;
+      const waterY = h * 0.55;
       ctx.save();
       ctx.fillStyle = '#fefefe';
-      ctx.fillRect(0, 0, w, interfaceY);
-      ctx.fillStyle = '#cfe6ff';
-      ctx.fillRect(0, interfaceY, w, h - interfaceY);
-      ctx.strokeStyle = '#98b6ff';
-      ctx.lineWidth = 3;
+      ctx.fillRect(0, 0, waterY, w);
+      ctx.fillStyle = '#a6dcff';
+      ctx.fillRect(0, waterY, w, h - waterY);
+
+      const glassX = w * 0.4;
+      ctx.strokeStyle = '#c3d9ff';
+      ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.moveTo(30, interfaceY);
-      ctx.lineTo(w - 30, interfaceY);
+      ctx.moveTo(glassX - 80, waterY - 140);
+      ctx.lineTo(glassX + 80, waterY - 140);
+      ctx.lineTo(glassX + 120, waterY + 140);
+      ctx.lineTo(glassX - 120, waterY + 140);
+      ctx.closePath();
       ctx.stroke();
-      const originX = w / 2;
-      ctx.setLineDash([6, 6]);
-      ctx.strokeStyle = '#ffcf80';
-      ctx.beginPath();
-      ctx.moveTo(originX, interfaceY - 150);
-      ctx.lineTo(originX, interfaceY + 150);
-      ctx.stroke();
-      ctx.setLineDash([]);
+
       const angle = toRad(params.angle);
       const sinTheta2 = clamp((n1 / n2) * Math.sin(angle), -0.999, 0.999);
       const theta2 = Math.asin(sinTheta2);
-      const len = 170;
-      ctx.strokeStyle = '#4c7be5';
-      ctx.beginPath();
-      ctx.moveTo(originX - Math.sin(angle) * len, interfaceY - Math.cos(angle) * len);
-      ctx.lineTo(originX, interfaceY);
-      ctx.stroke();
+
       ctx.strokeStyle = '#ff9b45';
+      ctx.lineWidth = 6;
       ctx.beginPath();
-      ctx.moveTo(originX, interfaceY);
-      ctx.lineTo(originX + Math.sin(theta2) * len, interfaceY + Math.cos(theta2) * len);
+      ctx.moveTo(glassX - 140, waterY - 120);
+      ctx.lineTo(glassX, waterY);
       ctx.stroke();
+
+      ctx.strokeStyle = '#1f69d5';
+      ctx.beginPath();
+      ctx.moveTo(glassX, waterY);
+      ctx.lineTo(glassX + Math.sin(theta2) * 220, waterY + Math.cos(theta2) * 220);
+      ctx.stroke();
+
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = '14px Poppins, sans-serif';
+      ctx.fillText(`θ₁=${params.angle.toFixed(0)}°`, glassX - 190, waterY - 40);
+      ctx.fillText(`θ₂=${(theta2 * 180 / Math.PI).toFixed(1)}°`, glassX + 70, waterY + 100);
+
       ctx.restore();
     }
 
     function drawOhm(ctx, w, h, params) {
-      const top = h * 0.35;
-      const bottom = h * 0.75;
-      const left = w * 0.2;
-      const right = w * 0.8;
       ctx.save();
+      const deskY = h * 0.7;
+      ctx.fillStyle = '#f2f5ff';
+      ctx.fillRect(0, 0, w, deskY);
+      ctx.fillStyle = '#d7e0f7';
+      ctx.fillRect(0, deskY, w, h - deskY);
+
+      ctx.strokeStyle = '#b98551';
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.2, deskY);
+      ctx.lineTo(w * 0.8, deskY);
+      ctx.stroke();
+
+      ctx.fillStyle = '#444';
+      ctx.fillRect(w * 0.25, deskY - 90, 30, 90);
+      ctx.fillRect(w * 0.7, deskY - 90, 30, 90);
+
+      const lampCenterX = w * 0.5;
+      const lampCenterY = deskY - 80;
+      ctx.fillStyle = '#f7c14a';
+      ctx.beginPath();
+      ctx.arc(lampCenterX, lampCenterY, 30, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff7d4';
+      ctx.beginPath();
+      ctx.arc(lampCenterX, lampCenterY, 18, 0, Math.PI * 2);
+      ctx.fill();
+
       ctx.strokeStyle = '#4c7be5';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.27, deskY - 70);
+      ctx.lineTo(w * 0.5 - 30, deskY - 80);
+      ctx.moveTo(w * 0.5 + 30, deskY - 80);
+      ctx.lineTo(w * 0.73, deskY - 70);
+      ctx.stroke();
+
+      const current = params.voltage / params.resistance;
+      const brightness = clamp(current / 1.5, 0, 1);
+      const glow = ctx.createRadialGradient(lampCenterX, lampCenterY, 10, lampCenterX, lampCenterY, 90);
+      glow.addColorStop(0, `rgba(255,233,150,${0.6 * brightness})`);
+      glow.addColorStop(1, 'rgba(255,233,150,0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(lampCenterX, lampCenterY, 90, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ff9b45';
       ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.moveTo(left, bottom);
-      ctx.lineTo(left, top);
-      ctx.lineTo(right, top);
-      ctx.lineTo(right, bottom);
-      ctx.lineTo(left, bottom);
+      ctx.moveTo(w * 0.27, deskY - 20);
+      ctx.lineTo(w * 0.73, deskY - 20);
       ctx.stroke();
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(left - 25, (top + bottom) / 2 - 15);
-      ctx.lineTo(left - 25, (top + bottom) / 2 + 15);
-      ctx.moveTo(left - 15, (top + bottom) / 2 - 35);
-      ctx.lineTo(left - 15, (top + bottom) / 2 + 35);
-      ctx.stroke();
-      ctx.strokeStyle = '#ff9b45';
-      ctx.lineWidth = 3;
-      const zigStart = w * 0.45;
-      const zigEnd = w * 0.65;
-      ctx.beginPath();
-      ctx.moveTo(zigStart, top);
-      const segments = 6;
-      for (let i = 1; i <= segments; i++) {
-        const x = zigStart + (i / segments) * (zigEnd - zigStart);
-        const y = top + (i % 2 === 0 ? -18 : 18);
-        ctx.lineTo(x, y);
-      }
-      ctx.lineTo(zigEnd, top);
-      ctx.stroke();
-      const pathLength = 2 * (right - left) + 2 * (bottom - top);
-      const dots = 12;
-      const current = params.voltage / params.resistance;
-      const speed = Math.max(0.5, current * 15);
-      for (let i = 0; i < dots; i++) {
-        const progress = ((params.time * speed) + i / dots) % 1;
-        const pos = progress * pathLength;
-        let x, y;
-        if (pos < (right - left)) {
-          x = left + pos;
-          y = top;
-        } else if (pos < (right - left) + (bottom - top)) {
-          x = right;
-          y = top + (pos - (right - left));
-        } else if (pos < 2 * (right - left) + (bottom - top)) {
-          x = right - (pos - (right - left) - (bottom - top));
-          y = bottom;
-        } else {
-          x = left;
-          y = bottom - (pos - (2 * (right - left) + (bottom - top)));
-        }
-        ctx.fillStyle = '#4c7be5';
+      const dashCount = 10;
+      for (let i = 0; i < dashCount; i++) {
+        const t = (i / dashCount + params.time * current * 0.5) % 1;
+        const x = w * 0.27 + t * (w * 0.46);
+        ctx.fillStyle = '#ff9b45';
         ctx.beginPath();
-        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.arc(x, deskY - 20, 5, 0, Math.PI * 2);
         ctx.fill();
       }
+
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = '14px Poppins, sans-serif';
+      ctx.fillText('电池', w * 0.24, deskY - 100);
+      ctx.fillText('电脑灯泡', w * 0.48 - 30, deskY - 110);
+      ctx.fillText(`I = ${(current).toFixed(2)}A`, w * 0.55, deskY - 40);
       ctx.restore();
     }
 
     function drawSeries(ctx, w, h, params) {
-      const top = h * 0.4;
-      const bottom = h * 0.72;
-      const left = w * 0.15;
-      const right = w * 0.85;
+      const tableY = h * 0.75;
       ctx.save();
-      ctx.strokeStyle = '#4c7be5';
-      ctx.lineWidth = 3;
+      ctx.fillStyle = '#eef3ff';
+      ctx.fillRect(0, 0, w, tableY);
+      ctx.fillStyle = '#d8e0f0';
+      ctx.fillRect(0, tableY, w, h - tableY);
+
+      ctx.fillStyle = '#444';
+      ctx.fillRect(w * 0.18, tableY - 70, 25, 70);
+      ctx.fillRect(w * 0.82 - 25, tableY - 70, 25, 70);
+      const lampX = w * 0.3;
+      const lampY = tableY - 80;
+      ctx.fillStyle = '#f0c44a';
       ctx.beginPath();
-      ctx.moveTo(left, bottom);
-      ctx.lineTo(left, top);
-      ctx.lineTo(right, top);
-      ctx.lineTo(right, bottom);
-      ctx.lineTo(left, bottom);
-      ctx.stroke();
-      const resistorWidth = 60;
-      const resistorSpacing = 40;
-      const r1X = w * 0.35;
-      const r2X = r1X + resistorWidth + resistorSpacing;
-      const resistorY = top - 18;
-      ctx.fillStyle = '#fff';
-      ctx.strokeStyle = '#ff9b45';
-      ctx.lineWidth = 2.5;
-      roundedRectPath(ctx, r1X, resistorY, resistorWidth, 38, 12);
+      ctx.ellipse(lampX, lampY, 30, 18, 0, 0, Math.PI * 2);
       ctx.fill();
+
+      ctx.fillStyle = '#a0c6ff';
+      ctx.fillRect(w * 0.42, tableY - 90, 60, 60);
+      ctx.fillStyle = '#789ddc';
+      ctx.fillRect(w * 0.55, tableY - 70, 60, 40);
+      ctx.fillStyle = '#f2f5ff';
+      ctx.fillRect(w * 0.64, tableY - 35, 80, 20);
+
+      ctx.strokeStyle = '#4c7be5';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.18 + 25, tableY - 40);
+      ctx.lineTo(w * 0.3 - 30, tableY - 40);
+      ctx.moveTo(w * 0.3 + 30, tableY - 40);
+      ctx.lineTo(w * 0.42, tableY - 60);
+      ctx.lineTo(w * 0.55, tableY - 50);
+      ctx.lineTo(w * 0.64, tableY - 20);
+      ctx.lineTo(w * 0.82 - 25, tableY - 40);
       ctx.stroke();
-      roundedRectPath(ctx, r2X, resistorY, resistorWidth, 38, 12);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = '#ff9b45';
-      ctx.font = '13px Poppins, sans-serif';
-      ctx.fillText('R1', r1X + 20, resistorY + 24);
-      ctx.fillText('R2', r2X + 20, resistorY + 24);
-      const current = params.voltage / (params.r1 + params.r2);
-      const maxDots = 18;
-      for (let i = 0; i < maxDots; i++) {
-        const phase = (i / maxDots + params.time * current) % 1;
-        const x = left + phase * (right - left);
+
+      const total = params.r1 + params.r2;
+      const current = params.voltage / total;
+      const dots = 14;
+      for (let i = 0; i < dots; i++) {
+        const t = (i / dots + params.time * current) % 1;
+        const x = w * 0.2 + t * (w * 0.6);
+        ctx.fillStyle = '#ff9b45';
         ctx.beginPath();
-        ctx.fillStyle = '#4c7be5';
-        ctx.arc(x, bottom - 12, 4, 0, Math.PI * 2);
+        ctx.arc(x, tableY - 35, 5, 0, Math.PI * 2);
         ctx.fill();
       }
+
+      const lampBrightness = clamp(current / 1.2, 0, 1);
+      const lampGlow = ctx.createRadialGradient(lampX, lampY, 15, lampX, lampY, 80);
+      lampGlow.addColorStop(0, `rgba(255,230,140,${0.6 * lampBrightness})`);
+      lampGlow.addColorStop(1, 'rgba(255,230,140,0)');
+      ctx.fillStyle = lampGlow;
+      ctx.beginPath();
+      ctx.arc(lampX, lampY, 80, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = '13px Poppins, sans-serif';
+      ctx.fillText('串联灯泡', w * 0.28, tableY - 110);
+      ctx.fillText('风扇(电机)', w * 0.44, tableY - 95);
+      ctx.fillText('电脑/电阻箱', w * 0.54, tableY - 30);
+      ctx.fillText(`I=${current.toFixed(2)}A`, w * 0.65, tableY - 90);
       ctx.restore();
     }
 
     function drawEnergy(ctx, w, h, params) {
-      const groundY = h * 0.82;
       ctx.save();
-      ctx.fillStyle = '#cfe0ff';
+      ctx.fillStyle = '#e7f3ff';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#b4d689';
       ctx.beginPath();
-      ctx.moveTo(w * 0.15, groundY);
-      ctx.lineTo(w * 0.85, groundY);
-      ctx.lineTo(w * 0.7, groundY - 210);
+      ctx.moveTo(0, h * 0.7);
+      ctx.quadraticCurveTo(w * 0.3, h * 0.45, w * 0.6, h * 0.65);
+      ctx.lineTo(w, h);
+      ctx.lineTo(0, h);
       ctx.closePath();
       ctx.fill();
-      const heightFactor = params.height / 10;
-      const ballX = w * 0.2 + heightFactor * w * 0.5 - Math.sin(params.time) * 12;
-      const ballY = groundY - heightFactor * 190 - 20;
-      ctx.fillStyle = '#ff9b45';
+
+      const heightNorm = params.height / 10;
+      const climberX = w * 0.2 + heightNorm * w * 0.5;
+      const climbBaseY = h * 0.7 - heightNorm * 220;
+      const bounce = Math.sin(params.time * 2) * 6;
+      const climberY = climbBaseY + bounce;
+      ctx.fillStyle = '#ffac6e';
       ctx.beginPath();
-      ctx.arc(ballX, ballY, 20, 0, Math.PI * 2);
+      ctx.arc(climberX, climberY - 32, 18, 0, Math.PI * 2);
       ctx.fill();
+      ctx.fillRect(climberX - 12, climberY - 32, 24, 42);
       ctx.fillStyle = '#4c7be5';
+      ctx.fillRect(climberX - 18, climberY + 8, 36, 52);
+
+      const energy = params.mass * g * params.height;
+      ctx.fillStyle = '#1f2a44';
       ctx.font = '16px Poppins, sans-serif';
-      ctx.fillText(`Ep=${(params.mass * g * params.height).toFixed(1)}J`, ballX - 30, ballY - 30);
+      ctx.fillText(`势能 Ep = ${energy.toFixed(1)} J`, climberX - 90, climberY - 70);
+      ctx.fillText(`高度 h = ${params.height.toFixed(1)} m`, climberX - 90, climberY - 48);
+
+      ctx.strokeStyle = '#ff9b45';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(climberX, climberY);
+      ctx.lineTo(climberX, climberY - params.height * 8);
+      ctx.stroke();
       ctx.restore();
     }
 
@@ -997,158 +1172,203 @@
     function drawCircular(ctx, w, h, params) {
       const centerX = w / 2;
       const centerY = h / 2;
-      const radius = Math.min(w, h) * 0.25 + params.radius * 6;
       ctx.save();
-      ctx.strokeStyle = '#dde5ff';
-      ctx.lineWidth = 2;
+      const planetRadius = 60;
+      ctx.fillStyle = '#4b63a8';
       ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-      ctx.stroke();
-      const angle = params.time * params.speed * 0.4;
-      const x = centerX + radius * Math.cos(angle);
-      const y = centerY + radius * Math.sin(angle);
-      ctx.fillStyle = '#ff9b45';
-      ctx.beginPath();
-      ctx.arc(x, y, 12, 0, Math.PI * 2);
+      ctx.arc(centerX, centerY, planetRadius, 0, Math.PI * 2);
       ctx.fill();
-      drawArrow(ctx, x, y, x - Math.sin(angle) * 40, y + Math.cos(angle) * 40, '#4c7be5', 3);
+      ctx.fillStyle = '#e8f0ff';
+      ctx.beginPath();
+      ctx.arc(centerX - 20, centerY - 15, 10, 0, Math.PI * 2);
+      ctx.fill();
+
+      const orbitRadius = Math.min(w, h) * 0.25 + params.radius * 6;
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, orbitRadius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const angle = params.time * params.speed * 0.4;
+      const satX = centerX + orbitRadius * Math.cos(angle);
+      const satY = centerY + orbitRadius * Math.sin(angle);
+
+      ctx.fillStyle = '#f0b252';
+      ctx.fillRect(satX - 18, satY - 8, 36, 16);
+      ctx.fillStyle = '#6db1ff';
+      ctx.fillRect(satX - 45, satY - 6, 20, 12);
+      ctx.fillRect(satX + 25, satY - 6, 20, 12);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(satX - 8, satY - 4, 16, 8);
+
+      drawArrow(ctx, satX, satY, satX - Math.sin(angle) * 45, satY + Math.cos(angle) * 45, '#ff9b45', 4);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '14px Poppins, sans-serif';
+      ctx.fillText(`向心加速度 ~ ${(params.speed * params.speed / params.radius).toFixed(2)} m/s²`, centerX - 110, centerY + orbitRadius + 30);
       ctx.restore();
     }
 
     function drawProjectile(ctx, w, h, params) {
-      const baseX = w * 0.08;
-      const baseY = h * 0.85;
+      const groundY = h * 0.85;
+      ctx.save();
+      ctx.fillStyle = '#c5e3ff';
+      ctx.fillRect(0, 0, w, groundY);
+      ctx.fillStyle = '#b9d38d';
+      ctx.fillRect(0, groundY, w, h - groundY);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(w * 0.8, groundY - 110, 15, 110);
+      ctx.fillRect(w * 0.82, groundY - 110, 3, 110);
+
+      const launcherX = w * 0.1;
+      const launcherY = groundY - 10;
+      ctx.fillStyle = '#444';
+      ctx.fillRect(launcherX - 15, launcherY - 40, 30, 40);
+
       const speed = params.speed;
       const angle = toRad(params.angle);
+      const totalTime = Math.max(0.2, (2 * speed * Math.sin(angle)) / g);
       const range = (speed * speed * Math.sin(2 * angle)) / g;
-      const totalTime = (2 * speed * Math.sin(angle)) / g;
-      const scale = w * 0.75 / Math.max(range, 5);
-      ctx.save();
-      ctx.strokeStyle = '#d4e1ff';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(baseX, baseY);
-      ctx.lineTo(baseX + w * 0.8, baseY);
-      ctx.stroke();
+      const scale = w * 0.7 / Math.max(range, 5);
       ctx.strokeStyle = '#4c7be5';
       ctx.lineWidth = 3;
       ctx.beginPath();
-      for (let i = 0; i <= 40; i++) {
-        const t = (i / 40) * totalTime;
+      for (let i = 0; i <= 60; i++) {
+        const t = (i / 60) * totalTime;
         const x = speed * Math.cos(angle) * t;
         const y = speed * Math.sin(angle) * t - 0.5 * g * t * t;
-        const canvasX = baseX + x * scale;
-        const canvasY = baseY - y * scale;
-        if (i === 0) ctx.moveTo(canvasX, canvasY);
-        else ctx.lineTo(canvasX, canvasY);
+        const drawX = launcherX + x * scale;
+        const drawY = groundY - y * scale;
+        if (i === 0) ctx.moveTo(drawX, drawY);
+        else ctx.lineTo(drawX, drawY);
       }
       ctx.stroke();
+
       const progress = (params.time % totalTime);
       const px = speed * Math.cos(angle) * progress;
       const py = speed * Math.sin(angle) * progress - 0.5 * g * progress * progress;
-      const drawX = baseX + px * scale;
-      const drawY = baseY - py * scale;
       ctx.fillStyle = '#ff9b45';
       ctx.beginPath();
-      ctx.arc(drawX, drawY, 10, 0, Math.PI * 2);
+      ctx.arc(launcherX + px * scale, groundY - py * scale, 12, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
 
     function drawHarmonic(ctx, w, h, params) {
-      const baseY = h * 0.6;
-      const wallX = w * 0.15;
       ctx.save();
-      ctx.fillStyle = '#dfe7ff';
-      ctx.fillRect(wallX - 20, baseY - 60, 20, 200);
+      ctx.fillStyle = '#f1f5ff';
+      ctx.fillRect(0, 0, w, h);
+      const pivotX = w * 0.5;
+      const pivotY = h * 0.15;
+      ctx.fillStyle = '#d9dce9';
+      ctx.fillRect(pivotX - 60, pivotY - 10, 120, 20);
+
       const displacement = params.amplitude * Math.sin(params.time * params.frequency * Math.PI);
-      const massX = w * 0.35 + displacement;
+      const bobX = pivotX + displacement;
+      const bobY = h * 0.6;
+
       ctx.strokeStyle = '#4c7be5';
       ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.moveTo(wallX, baseY);
-      const coils = 7;
-      const length = massX - wallX - 20;
-      for (let i = 0; i < coils; i++) {
-        const x = wallX + (i / coils) * length;
-        const y = baseY + (i % 2 === 0 ? -22 : 22);
-        ctx.lineTo(x, y);
-      }
-      ctx.lineTo(massX, baseY);
+      ctx.moveTo(pivotX, pivotY);
+      ctx.lineTo(bobX, bobY);
       ctx.stroke();
-      ctx.fillStyle = '#fff';
-      ctx.strokeStyle = '#ff9b45';
-      roundedRectPath(ctx, massX, baseY - 35, 60, 70, 12);
+
+      ctx.fillStyle = '#ff9b45';
+      ctx.beginPath();
+      ctx.arc(bobX, bobY, 25, 0, Math.PI * 2);
       ctx.fill();
-      ctx.stroke();
+
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = '14px Poppins, sans-serif';
+      ctx.fillText(`x(t) = A sin(ωt)`, pivotX - 70, pivotY + 30);
       ctx.restore();
     }
 
     function drawWave(ctx, w, h, params) {
-      const mid = h * 0.5;
       ctx.save();
-      ctx.strokeStyle = '#e0eaff';
-      ctx.lineWidth = 1;
+      ctx.fillStyle = '#f0f4ff';
+      ctx.fillRect(0, 0, w, h);
+      const ropeY = h * 0.6;
+      ctx.strokeStyle = '#c9d7ff';
+      ctx.lineWidth = 8;
       ctx.beginPath();
-      ctx.moveTo(0, mid);
-      ctx.lineTo(w, mid);
+      ctx.moveTo(0, ropeY);
+      ctx.lineTo(w, ropeY);
       ctx.stroke();
+
       const amplitude = params.amplitude;
       const freq = params.frequency;
-      ctx.lineWidth = 2.5;
-      ctx.strokeStyle = '#4c7be5';
-      ctx.beginPath();
-      for (let x = 0; x <= w; x++) {
-        const y = mid + amplitude * Math.sin((x / 60) * freq * Math.PI - params.time);
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
+      ctx.lineWidth = 5;
       ctx.strokeStyle = '#ff9b45';
       ctx.beginPath();
       for (let x = 0; x <= w; x++) {
-        const y = mid + amplitude * 0.8 * Math.sin((x / 60) * (freq + 0.4) * Math.PI - params.time * 1.2);
+        const y = ropeY + amplitude * Math.sin((x / 80) * freq * Math.PI - params.time);
         if (x === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
       ctx.stroke();
+
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = '14px Poppins, sans-serif';
+      ctx.fillText('绳子端点被上下抖动 → 横波沿绳传播', 20, ropeY - 40);
       ctx.restore();
     }
 
     function drawDoppler(ctx, w, h, params) {
-      const baseX = w * 0.25 + Math.sin(params.time * 0.5) * 30;
-      const baseY = h * 0.5;
+      const roadY = h * 0.65;
       ctx.save();
-      ctx.fillStyle = '#ff9b45';
-      ctx.beginPath();
-      ctx.arc(baseX, baseY, 18, 0, Math.PI * 2);
+      ctx.fillStyle = '#f3f7ff';
+      ctx.fillRect(0, 0, w, roadY);
+      ctx.fillStyle = '#cbd6e7';
+      ctx.fillRect(0, roadY, w, h - roadY);
+
+      const ambulanceX = w * 0.2 + Math.sin(params.time * 0.3) * 80;
+      ctx.fillStyle = '#ffffff';
+      roundedRectPath(ctx, ambulanceX - 60, roadY - 70, 120, 50, 12);
       ctx.fill();
-      const baseSpacing = 30;
+      ctx.fillStyle = '#ff4d4d';
+      ctx.fillRect(ambulanceX - 20, roadY - 90, 40, 20);
+      ctx.fillStyle = '#1f2a44';
+      ctx.beginPath();
+      ctx.arc(ambulanceX - 35, roadY - 10, 14, 0, Math.PI * 2);
+      ctx.arc(ambulanceX + 35, roadY - 10, 14, 0, Math.PI * 2);
+      ctx.fill();
+
+      const baseSpacing = 35;
       const approachSpacing = baseSpacing * (1 - params.sourceSpeed / 200);
       const recedeSpacing = baseSpacing * (1 + params.sourceSpeed / 200);
       ctx.strokeStyle = '#4c7be5';
       ctx.lineWidth = 2;
       for (let i = 1; i <= 6; i++) {
         ctx.beginPath();
-        ctx.arc(baseX + i * approachSpacing, baseY, i * approachSpacing, -0.8, 0.8);
+        ctx.arc(ambulanceX + i * approachSpacing, roadY - 40, i * approachSpacing, -0.4, 0.4);
         ctx.stroke();
         ctx.beginPath();
-        ctx.arc(baseX - i * recedeSpacing, baseY, i * recedeSpacing, Math.PI - 0.8, Math.PI + 0.8);
+        ctx.arc(ambulanceX - i * recedeSpacing, roadY - 40, i * recedeSpacing, Math.PI - 0.4, Math.PI + 0.4);
         ctx.stroke();
       }
       ctx.restore();
     }
 
     function drawThermal(ctx, w, h, params) {
-      const baseY = h * 0.6;
       ctx.save();
-      ctx.fillStyle = '#dfe8ff';
-      ctx.fillRect(w * 0.15, baseY, w * 0.7, 6);
-      const baseLength = w * 0.4;
+      ctx.fillStyle = '#f0f4ff';
+      ctx.fillRect(0, 0, w, h);
+      const baseY = h * 0.6;
+      ctx.fillStyle = '#c9d1e8';
+      ctx.fillRect(w * 0.1, baseY, w * 0.8, 8);
+
+      const baseLength = w * 0.35;
       const expansion = params.alpha * 1e-6 * params.deltaT;
-      const rodLength = baseLength * (1 + expansion * 120);
-      ctx.fillStyle = '#ffb98f';
-      ctx.fillRect(w * 0.3, baseY - 25, rodLength, 20);
+      const rodLength = baseLength * (1 + expansion * 200);
+      ctx.fillStyle = '#ff9b45';
+      ctx.fillRect(w * 0.3, baseY - 20, rodLength, 20);
+
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = '14px Poppins, sans-serif';
+      ctx.fillText(`ΔL ≈ ${(expansion * 1000).toFixed(2)} mm (按 L₀=1m)`, w * 0.3, baseY - 30);
       ctx.restore();
     }
 
@@ -1156,82 +1376,108 @@
       const centerX = w * 0.5;
       const centerY = h * 0.45;
       ctx.save();
-      ctx.strokeStyle = '#d1deff';
-      ctx.lineWidth = 1.5;
+      ctx.fillStyle = '#f4f7ff';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#d15b5b';
+      ctx.fillRect(40, centerY - 80, 50, 160);
+      ctx.fillStyle = '#4a6fca';
+      ctx.fillRect(w - 90, centerY - 80, 50, 160);
+
+      ctx.strokeStyle = '#cfd8ed';
+      ctx.lineWidth = 2;
       for (let i = -3; i <= 3; i++) {
         ctx.beginPath();
-        ctx.moveTo(60, centerY + i * 22);
-        ctx.lineTo(w - 60, centerY + i * 22);
+        ctx.moveTo(90, centerY + i * 25);
+        ctx.lineTo(w - 90, centerY + i * 25);
         ctx.stroke();
-        for (let j = 70; j < w - 60; j += 40) {
-          ctx.beginPath();
-          ctx.moveTo(j - 6, centerY + i * 22 - 6);
-          ctx.lineTo(j + 6, centerY + i * 22 + 6);
-          ctx.moveTo(j + 6, centerY + i * 22 - 6);
-          ctx.lineTo(j - 6, centerY + i * 22 + 6);
-          ctx.stroke();
-        }
       }
-      const radius = 90;
+
+      const radius = 110;
       const angle = params.time * params.velocity * params.magneticField * 0.2;
-      const x = centerX + radius * Math.cos(angle);
-      const y = centerY + radius * Math.sin(angle);
+      const particleX = centerX + radius * Math.cos(angle);
+      const particleY = centerY + radius * Math.sin(angle);
       ctx.fillStyle = '#ff9b45';
       ctx.beginPath();
-      ctx.arc(x, y, 12, 0, Math.PI * 2);
+      ctx.arc(particleX, particleY, 14, 0, Math.PI * 2);
       ctx.fill();
-      drawArrow(ctx, x, y, x - Math.sin(angle) * 40, y + Math.cos(angle) * 40, '#4c7be5', 4);
+
+      drawArrow(ctx, particleX, particleY, particleX - Math.sin(angle) * 45, particleY + Math.cos(angle) * 45, '#4c7be5', 4);
       ctx.restore();
     }
 
     function drawEnergyFlow(ctx, w, h, params) {
-      const centerY = h * 0.5;
       ctx.save();
-      ctx.strokeStyle = '#dce5ff';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(30, centerY);
-      ctx.lineTo(w - 30, centerY);
-      ctx.stroke();
-      const amplitude = params.tempDiff * 8;
+      ctx.fillStyle = '#f9fbff';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#dde6f5';
+      ctx.fillRect(w * 0.05, h * 0.2, w * 0.4, h * 0.6);
+
+      const radiatorX = w * 0.1;
+      ctx.fillStyle = '#c7d4ea';
+      for (let i = 0; i < 6; i++) {
+        ctx.fillRect(radiatorX + i * 30, h * 0.3, 20, h * 0.4);
+      }
+
+      const amplitude = params.tempDiff * 4;
       ctx.strokeStyle = '#ff9b45';
       ctx.lineWidth = 3;
       ctx.beginPath();
-      for (let x = 30; x <= w - 30; x++) {
-        const y = centerY + amplitude * Math.sin((x / 60) + params.time * 0.8);
-        if (x === 30) ctx.moveTo(x, y);
+      for (let y = 0; y <= h; y += 6) {
+        const x = radiatorX + 210 + Math.sin((y / 40) + params.time * 0.8) * amplitude;
+        if (y === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
       ctx.stroke();
+      ctx.fillStyle = '#1f2a44';
+      ctx.font = '14px Poppins, sans-serif';
+      ctx.fillText(`温差 ${params.tempDiff.toFixed(0)}°C → 对流更强`, radiatorX + 200, h * 0.3);
       ctx.restore();
     }
 
     function drawPressure(ctx, w, h, params) {
-      const tankX = w * 0.2;
-      const tankW = w * 0.6;
-      const tankTop = h * 0.15;
-      const tankH = h * 0.7;
+      const surfaceY = h * 0.25;
       ctx.save();
-      ctx.strokeStyle = '#9fbdfd';
+      ctx.fillStyle = '#8ed0ff';
+      ctx.fillRect(0, surfaceY, w, h - surfaceY);
+      ctx.fillStyle = '#b7e1ff';
+      for (let i = 0; i < 30; i++) {
+        const x = (i / 30) * w;
+        const wave = Math.sin(params.time * 2 + i) * 5;
+        ctx.beginPath();
+        ctx.ellipse(x, surfaceY + wave, 35, 12, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      const depthRatio = clamp(params.depth / 15, 0, 1);
+      const diverY = surfaceY + depthRatio * (h * 0.6);
+      ctx.fillStyle = '#ffcc8d';
+      ctx.beginPath();
+      ctx.arc(w * 0.3, diverY - 20, 20, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#4a90e2';
+      ctx.fillRect(w * 0.28, diverY - 15, 40, 55);
+      ctx.fillStyle = '#364f8a';
+      ctx.fillRect(w * 0.28 - 10, diverY - 15, 10, 50);
+      ctx.fillRect(w * 0.28 + 40, diverY - 15, 10, 50);
+
+      ctx.strokeStyle = '#ffd197';
       ctx.lineWidth = 3;
-      roundedRectPath(ctx, tankX, tankTop, tankW, tankH, 20);
+      ctx.beginPath();
+      ctx.moveTo(w * 0.3, surfaceY + 5);
+      ctx.lineTo(w * 0.3, diverY);
       ctx.stroke();
-      const fluidRatio = clamp(params.depth / 15, 0, 1);
-      const fluidHeight = (tankH - 30) * fluidRatio;
-      const gradient = ctx.createLinearGradient(0, tankTop, 0, tankTop + tankH);
-      gradient.addColorStop(0, '#d9f0ff');
-      gradient.addColorStop(1, '#8cc2ff');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(tankX + 4, tankTop + tankH - fluidHeight, tankW - 8, fluidHeight);
-      const gaugeX = tankX + tankW + 30;
-      const maxBar = 180;
-      const barHeight = fluidRatio * maxBar;
-      ctx.fillStyle = '#ffb26b';
-      ctx.fillRect(gaugeX, tankTop + tankH - barHeight, 20, barHeight);
-      ctx.fillStyle = '#4c7be5';
+
+      const pressure = params.density * 1000 * g * params.depth;
+      const gaugeHeight = clamp(pressure / 200000, 0, 1) * 180;
+      ctx.fillStyle = '#f5f6fa';
+      ctx.fillRect(w * 0.65, surfaceY + 30, 70, 220);
+      ctx.fillStyle = '#ff9b45';
+      ctx.fillRect(w * 0.65 + 15, surfaceY + 230 - gaugeHeight, 40, gaugeHeight);
+      ctx.fillStyle = '#1f2a44';
       ctx.font = '14px Poppins, sans-serif';
-      ctx.fillText(`${params.depth.toFixed(1)}m`, gaugeX - 8, tankTop + tankH + 20);
-      drawArrow(ctx, tankX + tankW / 2, tankTop + tankH - fluidHeight, tankX + tankW / 2, tankTop + tankH - 10, '#ff9b45', 4);
+      ctx.fillText(`P≈${(pressure / 1000).toFixed(1)} kPa`, w * 0.65 - 10, surfaceY + 260);
+      ctx.fillText(`深度 ${params.depth.toFixed(1)}m`, w * 0.18, diverY + 40);
+
       ctx.restore();
     }
 
@@ -1242,18 +1488,28 @@
       ctx.save();
       ctx.fillStyle = params.q1 >= 0 ? '#ff7878' : '#4c7be5';
       ctx.beginPath();
-      ctx.arc(leftX, centerY, 35, 0, Math.PI * 2);
+      ctx.ellipse(leftX, centerY - 20, 40, 55, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#fff';
-      ctx.font = '16px Poppins, sans-serif';
+      ctx.font = '18px Poppins, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(params.q1 >= 0 ? '+' : '-', leftX, centerY + 6);
+      ctx.fillText(params.q1 >= 0 ? '+' : '-', leftX, centerY - 10);
+      ctx.strokeStyle = '#c0894a';
+      ctx.beginPath();
+      ctx.moveTo(leftX, centerY + 35);
+      ctx.lineTo(leftX, centerY + 80);
+      ctx.stroke();
       ctx.fillStyle = params.q2 >= 0 ? '#ff7878' : '#4c7be5';
       ctx.beginPath();
-      ctx.arc(rightX, centerY, 35, 0, Math.PI * 2);
+      ctx.ellipse(rightX, centerY - 20, 40, 55, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#fff';
-      ctx.fillText(params.q2 >= 0 ? '+' : '-', rightX, centerY + 6);
+      ctx.fillText(params.q2 >= 0 ? '+' : '-', rightX, centerY - 10);
+      ctx.strokeStyle = '#c0894a';
+      ctx.beginPath();
+      ctx.moveTo(rightX, centerY + 35);
+      ctx.lineTo(rightX, centerY + 80);
+      ctx.stroke();
       const lines = 6;
       for (let i = -lines; i <= lines; i++) {
         const offset = (i / lines) * 40;
@@ -1499,7 +1755,8 @@
         summary: '欧姆定律让电路分析从“猜测”变成“计算”。无论是灯泡还是电热棒，它们电阻越大电流越小，热量释放也能据此评估。',
         teachingPoints: [
           '串并联电路可先化简总电阻，再应用欧姆定律。',
-          '实验中保持导线接触良好，电流表应串联。'
+          '实验中保持导线接触良好，电流表应串联。',
+          '课件延伸：电脑、风扇、电灯等负载要核对额定电流后再接入电路。'
         ],
         formulaSteps: [
           'Ⅰ. 如果未知 R，先化简求出等效电阻。',
@@ -1529,7 +1786,8 @@
         summary: '串联电路像排队过独木桥——电流大小一致。通过等效化简，可以迅速算出灯泡亮度和安全电压。',
         teachingPoints: [
           '求电流时先计算总电阻，再代入 I = U / R总。',
-          '若想知道某段电压，可按分压关系 U段 = I × R段。'
+          '若想知道某段电压，可按分压关系 U段 = I × R段。',
+          '课堂提示：串联接入灯泡+电机时，电流相等，亮度和转速由总电阻决定。'
         ],
         sliders: [
           { id: 'r1', label: '电阻 R₁ (Ω)', min: 1, max: 60, step: 1, value: 15, unit: 'Ω' },
@@ -1672,7 +1930,7 @@
         id: 'projectile',
         name: '斜抛运动',
         category: '力学',
-        formula: 'R = \\frac{v^{2} \\sin 2θ}{g}',
+        formula: 'R = \\frac{v^{2} \\sin(2\\theta)}{g}',
         formulaDetail: '把初速度分解为水平与竖直分量，水平匀速、竖直做自由落体；射程与 sin2θ 有关，θ=45°时最远。',
         summary: '只需一次分解，就能预测炮弹、投篮或抛水球的轨迹。了解飞行时间和最大高度后，在竞赛题里也能更快判断相遇和落点。',
         teachingPoints: [
@@ -1913,6 +2171,9 @@
     const practiceRing = document.getElementById('practiceRing');
     const practiceReset = document.getElementById('practiceReset');
     const practiceExplain = document.getElementById('practiceExplain');
+    const navToggle = document.getElementById('navToggle');
+    const sidebar = document.querySelector('.sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
 
     let currentPrinciple = null;
     let currentParams = {};
@@ -1941,7 +2202,10 @@
           item.className = 'outline-item';
           item.textContent = principle.name;
           item.dataset.id = principle.id;
-          item.addEventListener('click', () => setActivePrinciple(principle.id));
+          item.addEventListener('click', () => {
+            setActivePrinciple(principle.id);
+            closeSidebarOnMobile();
+          });
           list.appendChild(item);
         });
         groupEl.appendChild(header);
@@ -1958,7 +2222,10 @@
         btn.dataset.nodeId = node.id;
         btn.textContent = node.label;
         btn.addEventListener('click', () => {
-          if (node.principles.length) setActivePrinciple(node.principles[0]);
+          if (node.principles.length) {
+            setActivePrinciple(node.principles[0]);
+            closeSidebarOnMobile();
+          }
         });
         pathContainer.appendChild(btn);
         if (index < learningNodes.length - 1) {
@@ -2159,7 +2426,32 @@
 
     practiceReset.addEventListener('click', rerollPracticeTarget);
     practiceExplain.addEventListener('click', explainPractice);
-    window.addEventListener('resize', updateCanvas);
+    window.addEventListener('resize', () => {
+      updateCanvas();
+      if (window.innerWidth > 900) {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+        navToggle.innerHTML = '<i class="fa-solid fa-bars"></i>';
+      }
+    });
+    navToggle.addEventListener('click', () => {
+      const open = sidebar.classList.toggle('open');
+      sidebarOverlay.classList.toggle('active', open);
+      navToggle.innerHTML = open ? '<i class="fa-solid fa-xmark"></i>' : '<i class="fa-solid fa-bars"></i>';
+    });
+    sidebarOverlay.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      sidebarOverlay.classList.remove('active');
+      navToggle.innerHTML = '<i class="fa-solid fa-bars"></i>';
+    });
+
+    function closeSidebarOnMobile() {
+      if (window.innerWidth <= 900 && sidebar.classList.contains('open')) {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+        navToggle.innerHTML = '<i class="fa-solid fa-bars"></i>';
+      }
+    }
 
     renderOutline();
     renderLearningPath();
